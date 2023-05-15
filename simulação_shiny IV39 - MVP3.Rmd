@@ -1,0 +1,4007 @@
+---
+title: "TesteShinny"
+author: "Vitor Hugo Marques"
+date: '2023-02-19'
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+Pacotes:
+```{r, include=FALSE}
+library(readxl) # arquivos em Excel
+library(reshape2)
+library(plyr)
+library(dplyr)
+library(lubridate) #days_in_m33onth
+library(openxlsx)
+#library(stringr)
+library(Amelia) #Imputar valores
+library(Hmisc) #Imputar valores
+library(imputeTS) #Imputar valores
+library(tictoc)
+
+library(ggplot2) #Gráficos
+library(plotly)
+library(ggdensity)
+library(hrbrthemes)
+library(viridis)
+
+library(tsibble)
+library(forecast)
+library(freedom)
+library(nnfor) # Redes Neurais: ELM
+
+library(shiny)
+library(ECharts2Shiny)
+library(shinyalert)
+library(DT)
+library(thematic)
+#library(shinymanager)
+library(shinydashboard)
+library(extraDistr)
+library(tidyverse)
+library(timetk)
+library(tibble)
+
+library(fpp3)
+library(tsibble)
+tic()
+```
+
+
+
+# Datasets:
+```{r dataset}
+#ok
+`datasetPocosEntraram` = read.csv('C:/Users/hru9/REditorWrapper_ac0ed7e3-89a7-4982-98e1-2a225a619091/input_df_bbce2639-65d4-4c6c-89f7-11a433a36732.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+#ok
+`datasetIEP` = read.csv('C:/Users/hru9/REditorWrapper_8e166c66-ca72-4b7e-bfa1-48d120c018e9/input_df_bbfaf41e-3371-45dc-8e1a-13052014594e.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+#`datasetIEP22` = read.csv('C:/Users/hru9/REditorWrapper_085c5142-90f4-4e88-84ab-687e54dafe94/input_df_443487d2-3115-410e-b534-6e497226d311.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+#ok
+`CurvaPocosNovos` = read.csv('C:/Users/hru9/REditorWrapper_b3b37b66-a7a8-4fc1-b9f6-31d072f79b2f/input_df_a81b90d4-01ca-4f8a-9320-a3e6317a5d21.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+#ok
+`Analisederisco.copy` = read.csv('C:/Users/hru9/REditorWrapper_e802bc84-95ae-48b6-8542-7684d15c6553/input_df_461de4ab-2e5a-4388-97e1-ab3d61100a5f.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+#ok
+`Analisederisco` = read.csv('C:/Users/hru9/REditorWrapper_e802bc84-95ae-48b6-8542-7684d15c6553/input_df_461de4ab-2e5a-4388-97e1-ab3d61100a5f.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+#ok
+`datasetPotencial` = read.csv('C:/Users/hru9/REditorWrapper_5af97fef-8b2f-4124-b206-fe06ddce7e73/input_df_b6440f03-c89e-4015-9f0c-77e6a54dfe41.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+#ok
+`datasetParadas` = read.csv('C:/Users/hru9/REditorWrapper_405e8c81-ae6f-4609-86c8-c9e0328396bd/input_df_7202ac44-08a5-4d20-a45a-d006f89efc33.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+#ok
+`datasetClusterParada` =  read.csv('C:/Users/hru9/REditorWrapper_1cafd337-8536-4e10-b006-66beaa09f4d1/input_df_9ed01683-cd80-4bea-b314-3675c63a6caf.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+#ok
+`ParadasProgramadas` = read.csv('C:/Users/hru9/REditorWrapper_c080e191-b199-4c76-a051-0b3b9e9ac404/input_df_f12f3cde-66a0-484c-81f9-0a25ec89fefc.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+```
+
+# Datasets Realizacoes 2022:
+```{r dataset}
+
+`Real.Prod` = read.csv('C:/Users/hru9/REditorWrapper_0d3177ac-c681-4532-bd40-9e0ffe818ba0/input_df_e4383ddd-cde9-47cc-914a-122b84788687.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+`Real.Pot` = read.csv('C:/Users/hru9/REditorWrapper_78071ff0-0fe8-4b31-a50b-4ac3ac9fb72d/input_df_f6f972ab-a979-4b50-a92a-4c43caecdeab.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+`Real.IEP` = read.csv('C:/Users/hru9/REditorWrapper_7c3150de-930b-407c-8825-4b8a2bce5621/input_df_77b9ae7c-7fd8-438c-bb95-c2032ab39601.csv', check.names = FALSE, encoding = "UTF-8", blank.lines.skip = FALSE);
+
+Real.Prod$Date <- strptime(Real.Prod$Date, "%Y-%m-%d")
+Real.Prod$Date <- as.POSIXct(Real.Prod$Date)
+
+Real.Pot$Date <- strptime(Real.Pot$Date, "%Y-%m-%d")
+Real.Pot$Date <- as.POSIXct(Real.Pot$Date)
+
+Real.IEP$Date <- strptime(Real.IEP$Date, "%Y-%m-%d")
+Real.IEP$Date <- as.POSIXct(Real.IEP$Date)
+
+colnames(Real.Prod) <- c("Date","UEP", "Prod")
+
+colnames(Real.Pot) <- c("Date","UEP", "Pot")
+
+colnames(Real.IEP) <- c("Date","UEP","Num","Den", "IEP")
+```
+
+
+# Pre-Processamento:
+
+# Parâmetros: 
+```{r Parametros}
+#Simulacoes = 100
+Nsim = 10  #Simulacoes
+n = 60 #Horizonte histórico (meses de jan/17 a Dez/21)
+h = 12 #Horizonte de Previsão (meses de jan/22 a Dez/22)
+nPrev = 12 #horizonte de Previsão
+hPocos = 12 #horizonte de planejamento dos poços novos
+k = 22 #UEPs
+#Modelo = "ARIMA AUTO" # ETS SMC / ARIMA B / ARIMA SMC / ETS Bootstrap / ARIMA BootsRemainder /
+
+
+rank50 <- Nsim/2
+rank10 <- Nsim*10/100
+rank90 <- Nsim*90/100
+
+
+#Simulacao = unlist(strsplit(Modelo, split = " "))[2]
+#MetodoTS = unlist(strsplit(Modelo, split = " "))[1] 
+#Simulacao
+```
+
+# 1) Pre-Processamento: Nomeação das colunas e tipo das colunas dos datasets
+
+## 1.1)  Ajuste de Dados: Nome e tipo das colunas
+
+```{r PreProcessamentoData}
+
+colnames(datasetPotencial) <- c("Date", "Potencial", "UEP")
+
+datasetPotencial$Date <- strptime(datasetPotencial$Date, "%Y-%m-%d")
+datasetPotencial$Date <- as.POSIXct(datasetPotencial$Date)
+datasetPotencial$Potencial <- as.numeric(datasetPotencial$Potencial)
+
+colnames(datasetIEP) <- c("Date", "IEP", "UEP", "NumIEP", "DenIEP")
+
+datasetIEP$Date <- strptime(datasetIEP$Date, "%Y-%m-%d")
+datasetIEP$Date <- as.POSIXct(datasetIEP$Date)
+datasetIEP$IEP <- as.numeric(datasetIEP$IEP)
+
+colnames(datasetPocosEntraram) <- c("Date", "ValorPocos", "UEP")
+
+datasetPocosEntraram$Date <- strptime(datasetPocosEntraram$Date, "%Y-%m-%d")
+datasetPocosEntraram$Date <- as.POSIXct(datasetPocosEntraram$Date)
+
+colnames(datasetParadas) <- c("UEP", "Descricao","Duracao","Origem", "VolumeParadas", "Date.inicio","Date.termino", "Cluster", "Perda diaria", "Perda mes", "Perda total")
+
+datasetParadas$Date.inicio <- strptime(datasetParadas$Date.inicio, "%Y-%m-%d")
+##mensal:
+datasetParadas$Date.inicio <- format(datasetParadas$Date.inicio, "%Y-%m-%d")
+datasetParadas$VolumeParadas <- as.numeric(datasetParadas$VolumeParadas)
+
+colnames(ParadasProgramadas) <- c("Date", "DataInicio", "Dur", "UEP", "DateDay", "Cluster")
+ParadasProgramadas$Date <- strptime(ParadasProgramadas$Date, "%Y-%m-%d")
+ParadasProgramadas$Date <- as.POSIXct(ParadasProgramadas$Date)
+ParadasProgramadas$DateDay <- strptime(ParadasProgramadas$DateDay, "%Y-%m-%d")
+ParadasProgramadas$DateDay <- as.POSIXct(ParadasProgramadas$DateDay)
+ParadasProgramadas$DataInicio <- strptime(ParadasProgramadas$DataInicio, "%Y-%m-%d")
+ParadasProgramadas$DataInicio <- as.POSIXct(ParadasProgramadas$DataInicio)
+```
+
+## 1.2)  Filtro do horizonte de tempo: Jan/2017 a Dez/2021
+```{r PreProcessamentoData2}
+
+#Filtro de tempo:
+datasetPotencial <- filter(datasetPotencial, Date >= "2017-01-01" & Date <= "2021-12-01")
+
+datasetIEP <- filter(datasetIEP, Date >= "2017-01-01" & Date <= "2021-12-01")
+datasetPocosEntraram <- filter(datasetPocosEntraram, Date >= "2017-01-01" & Date <= "2021-12-01")
+datasetParadas <- filter(datasetParadas, Date.inicio >= "2017-01-01" & Date.inicio <= "2021-12-01")
+```
+
+## 1.3)  Ajuste para dataset de Previsão dos Poços Novos:
+```{r Poços Novos a entrar}
+#Curva de Poços Novos a entrar:
+colnames(CurvaPocosNovos) <- c("Date", "Poco", "Curva", "Dt.Entrada", "UEP")
+CurvaPocosNovos$Date <- strptime(CurvaPocosNovos$Date, "%Y-%m-%d")
+
+CurvaPocosNovos$Date <- as.POSIXct(CurvaPocosNovos$Date)
+CurvaPocosNovos$Dt.Entrada <- strptime(CurvaPocosNovos$Dt.Entrada, "%Y-%m-%d")
+CurvaPocosNovos$Dt.Entrada <- as.POSIXct(CurvaPocosNovos$Dt.Entrada)
+
+
+colnames(Analisederisco) <- c("Poço", "Cat.Otimista", "Cat.Conservador", "Otimista","Conservador", "UEP")
+Analisederisco["Mais.Provavel"] = 0
+#CurvaPocosNovos <- filter(CurvaPocosNovos, Poco != "4-ESP-23D-RJS")
+
+```
+
+## 1.4) Retira UEP descomissionadas/vendidas:
+```{r descomissionadas e vendidas}
+datasetPotencial.copy <- datasetPotencial
+datasetPotencial <- filter(datasetPotencial, UEP != "PLATAFORMA DE NAMORADO-1" & 
+                             UEP != "PLATAFORMA DE NAMORADO-2" & 
+                             UEP != "PLATAFORMA DE CHERNE-1" & 
+                             UEP != "PLATAFORMA DE CHERNE-2" & 
+                             UEP != "PLATAFORMA DE GAROUPA" & 
+                             UEP != "NS-32" & 
+                             UEP != "PETROBRAS IX" & 
+                             UEP != "PETROBRAS XXVI" & 
+                             UEP != "PETROBRAS XXXVII" & 
+                             UEP != "PETROBRAS XXXIII" & 
+                             UEP != "SONDA DE PERFURAÇÃO SS-79" & 
+                             UEP != "PETROBRAS XXXV" & 
+                             UEP != "PLATAFORMA DE CARAPEBA-1" & 
+                             UEP != "PLATAFORMA DE CARAPEBA-2" & 
+                             UEP != "PLATAFORMA DE ENCHOVA" & 
+                             UEP != "PLATAFORMA DE PAMPO-1" & 
+                             UEP != "PLATAFORMA DE PARGO-1" & 
+                             UEP != "PLATAFORMA DE VERMELHO-1" & 
+                             UEP != "PLATAFORMA DE VERMELHO-2" & 
+                             UEP != "PLATAFORMA DE VERMELHO-3" & 
+                             UEP != "FPSO CIDADE DE RIO DAS OSTRAS" & 
+                             UEP != "FPSO CIDADE DO RIO DE JANEIRO" & 
+                             UEP != "PETROBRAS-XVIII" & 
+                             UEP != "SONDA DE PERFURAÇÃO SS-79" &
+                             UEP != "PETROBRAS-XIX" & 
+                             UEP != "PLATAFORMA DE PEROÁ" & 
+                             UEP != "PETROBRAS XV" & 
+                             UEP != "PETROBRAS VIII"&
+                            UEP != "PETROBRAS 63"&
+                            UEP != "PETROBRAS 61"&
+                            UEP != "FPSO CAPIXABA")
+
+datasetIEP <- filter(datasetIEP, UEP != "PLATAFORMA DE NAMORADO-1" & 
+                             UEP != "PLATAFORMA DE NAMORADO-2" & 
+                             UEP != "PLATAFORMA DE CHERNE-1" & 
+                             UEP != "PLATAFORMA DE CHERNE-2" & 
+                             UEP != "PLATAFORMA DE GAROUPA" & 
+                             UEP != "NS-32" & 
+                             UEP != "PETROBRAS IX" & 
+                             UEP != "PETROBRAS XXVI" & 
+                             UEP != "PETROBRAS XXXVII" & 
+                             UEP != "PETROBRAS XXXIII" & 
+                             UEP != "SONDA DE PERFURAÇÃO SS-79" & 
+                             UEP != "PETROBRAS XXXV" & 
+                             UEP != "PLATAFORMA DE CARAPEBA-1" & 
+                             UEP != "PLATAFORMA DE CARAPEBA-2" & 
+                             UEP != "PLATAFORMA DE ENCHOVA" & 
+                             UEP != "PLATAFORMA DE PAMPO-1" & 
+                             UEP != "PLATAFORMA DE PARGO-1" & 
+                             UEP != "PLATAFORMA DE VERMELHO-1" & 
+                             UEP != "PLATAFORMA DE VERMELHO-2" & 
+                             UEP != "PLATAFORMA DE VERMELHO-3" & 
+                             UEP != "FPSO CIDADE DE RIO DAS OSTRAS" & 
+                             UEP != "FPSO CIDADE DO RIO DE JANEIRO" & 
+                             UEP != "PETROBRAS-XVIII" & 
+                             UEP != "SONDA DE PERFURAÇÃO SS-79" &
+                             UEP != "PETROBRAS-XIX" & 
+                             UEP != "PETROBRAS XV" & 
+                             UEP != "PETROBRAS VIII"&
+                            UEP != "PETROBRAS 63"&
+                            UEP != "PETROBRAS 61"&
+                            UEP != "FPSO CAPIXABA")
+
+datasetPocosEntraram <- filter(datasetPocosEntraram, UEP != "PETROBRAS 63" & UEP != "PETROBRAS 61" & UEP != "FPSO CAPIXABA")
+
+datasetParadas <- filter(datasetParadas, UEP != "PNA-1" & 
+                             UEP != "PNA-2" & 
+                             UEP != "PCH-1" & 
+                             UEP != "PCH-2" & 
+                             UEP != "PPG-1" & 
+                             UEP != "NS-32" & 
+                             UEP != "P-9" & 
+                             UEP != "P-26" & 
+                             UEP != "P-37" & 
+                             UEP != "P-33" & 
+                             UEP != "SONDA DE PERFURAÇÃO SS-79" & 
+                             UEP != "P-35" & 
+                             UEP != "PCP-1" & 
+                             UEP != "PCP-2" & 
+                             UEP != "PCE-1" & 
+                             UEP != "PPM-1" & 
+                             UEP != "PGP-1" & 
+                             UEP != "PVM-1" & 
+                             UEP != "PVM-2" & 
+                             UEP != "PVM-3" & 
+                             UEP != "FPSO CIDADE DE RIO DAS OSTRAS" & 
+                             UEP != "FPSO CIDADE DO RIO DE JANEIRO" & 
+
+                             UEP != "PPER" &
+
+                             UEP != "P-15" & 
+                             UEP != "P-13" & UEP != "P-61" & UEP != "P-63" & UEP != "CAPX")
+
+Real.Prod <- filter(Real.Prod, UEP != "P-61" & UEP != "P-63" & UEP != "FPAG" & UEP != "FPAN" & UEP != "CAPX" )
+
+Real.Prod$UEP[Real.Prod$UEP == "P-62"] <- "PETROBRAS 62"
+Real.Prod$UEP[Real.Prod$UEP == "P-18"] <- "PETROBRAS XVIII"
+Real.Prod$UEP[Real.Prod$UEP == "P-19"] <- "PETROBRAS XIX"
+Real.Prod$UEP[Real.Prod$UEP == "P-20"] <- "PETROBRAS XX"
+Real.Prod$UEP[Real.Prod$UEP == "P-25"] <- "PETROBRAS XXV"
+Real.Prod$UEP[Real.Prod$UEP == "P-31"] <- "PETROBRAS XXXI"
+Real.Prod$UEP[Real.Prod$UEP == "P-40"] <- "PETROBRAS XL"
+Real.Prod$UEP[Real.Prod$UEP == "P-43"] <- "PETROBRAS XLIII"
+Real.Prod$UEP[Real.Prod$UEP == "P-48"] <- "PETROBRAS 48"
+Real.Prod$UEP[Real.Prod$UEP == "P-50"] <- "PETROBRAS 50"
+Real.Prod$UEP[Real.Prod$UEP == "P-51"] <- "PETROBRAS 51"
+Real.Prod$UEP[Real.Prod$UEP == "P-52"] <- "PETROBRAS 52"
+Real.Prod$UEP[Real.Prod$UEP == "P-53"] <- "PETROBRAS 53"
+Real.Prod$UEP[Real.Prod$UEP == "P-54"] <- "PETROBRAS 54"
+Real.Prod$UEP[Real.Prod$UEP == "P-55"] <- "PETROBRAS 55"
+Real.Prod$UEP[Real.Prod$UEP == "P-56"] <- "PETROBRAS 56"
+Real.Prod$UEP[Real.Prod$UEP == "P-57"] <- "FPSO P-57"
+Real.Prod$UEP[Real.Prod$UEP == "P-58"] <- "FPSO P-58"
+
+Real.Pot <- filter(Real.Pot, UEP != "P-61" & UEP != "P-63" & UEP != "FPAG" & UEP != "FPAN" & UEP != "CAPX" )
+
+Real.Pot$UEP[Real.Pot$UEP == "P-62"] <- "PETROBRAS 62"
+Real.Pot$UEP[Real.Pot$UEP == "P-61"] <- "PETROBRAS 61"
+Real.Pot$UEP[Real.Pot$UEP == "P-18"] <- "PETROBRAS XVIII"
+Real.Pot$UEP[Real.Pot$UEP == "P-19"] <- "PETROBRAS XIX"
+Real.Pot$UEP[Real.Pot$UEP == "P-20"] <- "PETROBRAS XX"
+Real.Pot$UEP[Real.Pot$UEP == "P-25"] <- "PETROBRAS XXV"
+Real.Pot$UEP[Real.Pot$UEP == "P-31"] <- "PETROBRAS XXXI"
+Real.Pot$UEP[Real.Pot$UEP == "P-40"] <- "PETROBRAS XL"
+Real.Pot$UEP[Real.Pot$UEP == "P-43"] <- "PETROBRAS XLIII"
+Real.Pot$UEP[Real.Pot$UEP == "P-48"] <- "PETROBRAS 48"
+Real.Pot$UEP[Real.Pot$UEP == "P-50"] <- "PETROBRAS 50"
+Real.Pot$UEP[Real.Pot$UEP == "P-51"] <- "PETROBRAS 51"
+Real.Pot$UEP[Real.Pot$UEP == "P-52"] <- "PETROBRAS 52"
+Real.Pot$UEP[Real.Pot$UEP == "P-53"] <- "PETROBRAS 53"
+Real.Pot$UEP[Real.Pot$UEP == "P-54"] <- "PETROBRAS 54"
+Real.Pot$UEP[Real.Pot$UEP == "P-55"] <- "PETROBRAS 55"
+Real.Pot$UEP[Real.Pot$UEP == "P-56"] <- "PETROBRAS 56"
+Real.Pot$UEP[Real.Pot$UEP == "P-57"] <- "FPSO P-57"
+Real.Pot$UEP[Real.Pot$UEP == "P-58"] <- "FPSO P-58"
+
+Real.IEP <- filter(Real.IEP, UEP != "P-61" & UEP != "P-63" & UEP != "FPAG" & UEP != "FPAN" & UEP != "CAPX" )
+
+Real.IEP$UEP[Real.IEP$UEP == "P-62"] <- "PETROBRAS 62"
+Real.IEP$UEP[Real.IEP$UEP == "P-61"] <- "PETROBRAS 61"
+Real.IEP$UEP[Real.IEP$UEP == "P-18"] <- "PETROBRAS XVIII"
+Real.IEP$UEP[Real.IEP$UEP == "P-19"] <- "PETROBRAS XIX"
+Real.IEP$UEP[Real.IEP$UEP == "P-20"] <- "PETROBRAS XX"
+Real.IEP$UEP[Real.IEP$UEP == "P-25"] <- "PETROBRAS XXV"
+Real.IEP$UEP[Real.IEP$UEP == "P-31"] <- "PETROBRAS XXXI"
+Real.IEP$UEP[Real.IEP$UEP == "P-40"] <- "PETROBRAS XL"
+Real.IEP$UEP[Real.IEP$UEP == "P-43"] <- "PETROBRAS XLIII"
+Real.IEP$UEP[Real.IEP$UEP == "P-48"] <- "PETROBRAS 48"
+Real.IEP$UEP[Real.IEP$UEP == "P-50"] <- "PETROBRAS 50"
+Real.IEP$UEP[Real.IEP$UEP == "P-51"] <- "PETROBRAS 51"
+Real.IEP$UEP[Real.IEP$UEP == "P-52"] <- "PETROBRAS 52"
+Real.IEP$UEP[Real.IEP$UEP == "P-53"] <- "PETROBRAS 53"
+Real.IEP$UEP[Real.IEP$UEP == "P-54"] <- "PETROBRAS 54"
+Real.IEP$UEP[Real.IEP$UEP == "P-55"] <- "PETROBRAS 55"
+Real.IEP$UEP[Real.IEP$UEP == "P-56"] <- "PETROBRAS 56"
+Real.IEP$UEP[Real.IEP$UEP == "P-57"] <- "FPSO P-57"
+Real.IEP$UEP[Real.IEP$UEP == "P-58"] <- "FPSO P-58"
+
+```
+
+## 1.5) Ajustar nomes para gráficos:
+```{r ajustes nomes}
+
+datasetPotencial$UEP[datasetPotencial$UEP == "FPSO CIDADE DE ANCHIETA"] <- "CDAN"
+datasetPotencial$UEP[datasetPotencial$UEP == "FPSO CID. DE CAMPOS GOYTACAZES"] <- "FPCGZ"
+datasetPotencial$UEP[datasetPotencial$UEP == "FPSO CIDADE VITÓRIA"] <- "CVIT"
+datasetPotencial$UEP[datasetPotencial$UEP == "FPSO CIDADE DE NITEROI"] <- "FPNIT"
+
+datasetIEP$UEP[datasetIEP$UEP == "FPSO CIDADE DE ANCHIETA"] <- "CDAN"
+datasetIEP$UEP[datasetIEP$UEP == "FPSO CID. DE CAMPOS GOYTACAZES"] <- "FPCGZ"
+datasetIEP$UEP[datasetIEP$UEP == "FPSO CIDADE VITÓRIA"] <- "CVIT"
+datasetIEP$UEP[datasetIEP$UEP == "FPSO CIDADE DE NITEROI"] <- "FPNIT"
+
+
+datasetPocosEntraram$UEP[datasetPocosEntraram$UEP == "FPSO CIDADE DE ANCHIETA"] <- "CDAN"
+datasetPocosEntraram$UEP[datasetPocosEntraram$UEP == "FPSO CID. DE CAMPOS GOYTACAZES"] <- "FPCGZ"
+datasetPocosEntraram$UEP[datasetPocosEntraram$UEP == "FPSO CIDADE VITÓRIA"] <- "CVIT"
+datasetPocosEntraram$UEP[datasetPocosEntraram$UEP == "FPSO CIDADE DE NITEROI"] <- "FPNIT"
+```
+
+## 1.14) Normalização MinMax:
+```{r Normalização}
+
+#Função para normalizar:
+f_minmax <- function(x){
+  return((x - min(x))/(max(x)-min(x)))
+}
+
+#Função para Desnormalizar:
+denormalize_minmax <- function(x){
+  return(x*(mmax-mmin)+mmin)
+}
+
+#datasetPotencial.mv3 <- datasetPotencial.mv2
+#datasetPotencialAjustado$PotencialMinMax <- f_minmax(datasetPotencialAjustado$'PotencialMV')
+```
+
+
+# Funcoes
+```{r functions}
+
+
+#Ajusta Potencial
+## 1) Carrega tabelas => Potencial
+## 2) Trata missing Values (4 UEPs) => Potencial MV
+## 3) Trata valor poços novos => Potencial AD
+
+Ajus.pot.pocos = function(datasetPotencial, datasetPocosEntraram){
+  
+datasetPotAjustado <- left_join(datasetPotencial, datasetPocosEntraram, by = c('UEP', 'Date'))
+  #Agrega por UEP e data, e onde tem NA coloca zero.
+  
+datasetPotAjustado.2 <- aggregate(cbind(ValorPocos = ValorPocos) ~ UEP + Date + Potencial, data=datasetPotAjustado,FUN=sum, na.rm=TRUE, na.action = na.pass)
+
+## 1.8) Missing VALUES - ABR/20 ->  P-48 ; P-43; P-58 ; #CAPX
+### setar Valores como NA:
+dataPot.mv <- datasetPotAjustado.2 %>%
+  mutate(PotencialMV = ifelse(Date == "2020-04-01" & UEP == "PETROBRAS 48",NA,Potencial))
+
+dataPot.mv <- dataPot.mv %>%
+  mutate(PotencialMV = ifelse(Date == "2020-04-01" & UEP == "FPSO P-58",NA,PotencialMV))
+
+#dataPot.mv <- dataPot.mv %>%
+#  mutate(PotencialMV = ifelse(Date == "2020-04-01" & UEP == "CAPX",NA,PotencialMV))
+
+dataPot.mv <- dataPot.mv %>%
+  mutate(PotencialMV = ifelse(Date == "2020-04-01" & UEP == "PETROBRAS XLIII",NA,PotencialMV))
+
+### Tratamento de missing values: Imputamento de valores baseado em média móvel exponencialmente ponderada com 4 meses anteriores:
+
+PotTs.mv.P48 <- ts(filter(dataPot.mv  %>% arrange(Date), UEP == "PETROBRAS 48")$PotencialMV,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+PotTs.ma.P48 <- na_ma(PotTs.mv.P48, k=4, weighting = "exponential")
+
+dataPot.mv2 <- dataPot.mv %>%
+  mutate(PotencialMV = ifelse(UEP == "PETROBRAS 48" & Date == "2020-04-01",PotTs.ma.P48[40],Potencial))
+
+PotTs.mv.P58 <- ts(filter(dataPot.mv  %>% arrange(Date), UEP == "FPSO P-58")$PotencialMV,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+PotTs.ma.P58 <- na_ma(PotTs.mv.P58, k=4, weighting = "exponential")
+
+dataPot.mv2 <- dataPot.mv2 %>%
+  mutate(PotencialMV = ifelse(UEP == "FPSO P-58" & Date == "2020-04-01",PotTs.ma.P58[40],PotencialMV))
+
+#PotTs.mv.CAPX <- ts(filter(dataPot.mv %>% arrange(Date), UEP == "CAPX")$PotencialMV,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+#PotTs.ma.CAPX <- na_ma(PotTs.mv.CAPX, k=4, weighting = "exponential")
+
+#dataPot.mv2 <- dataPot.mv2 %>%  mutate(PotencialMV = ifelse(UEP == "CAPX" & Date == "2020-04-01",PotTs.ma.CAPX[40],PotencialMV))
+
+PotTs.mv.P43 <- ts(filter(dataPot.mv  %>% arrange(Date), UEP == "PETROBRAS XLIII")$PotencialMV,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+PotTs.ma.P43 <- na_ma(PotTs.mv.P43, k=4, weighting = "exponential")
+
+dataPot.mv2 <- dataPot.mv2 %>%
+  mutate(PotencialMV = ifelse(UEP == "PETROBRAS XLIII" & Date == "2020-04-01",PotTs.ma.P43[40],PotencialMV))
+
+## Subtraindo o valor dos poços novos:
+datasetPotAjustado.3 <- mutate(dataPot.mv2, PotencialAjustado = PotencialMV-ValorPocos)
+
+datasetPotAjustado.3 <- datasetPotAjustado.3 %>% mutate(PotencialAjustado = ifelse(UEP == "FPCGZ",0,PotencialAjustado))
+
+datasetPotencialAjustado <- select(datasetPotAjustado.3, Date, UEP, Potencial, PotencialMV, PotencialAjustado)
+
+#colnames(datasetPotencial) <- c("Date", "UEP", "Potencial")
+colnames(datasetPotencialAjustado) <- c("Date", "UEP","Potencial", "PotencialMV", "PotencialAD")
+
+  return(datasetPotencialAjustado)
+}
+```
+
+```{r tratar Paradas Historico}
+Ajus.paradas = function(datasetParadas){
+datasetParadas$Date.termino <- strptime(datasetParadas$Date.termino, "%Y-%m-%d")
+datasetParadas$Date.termino <- as.POSIXct(datasetParadas$Date.termino)
+
+Paradas.Hist.Diario <- datasetParadas %>% 
+ rowwise() %>%
+ do(data.frame(Plataforma = .$UEP, DateDay = seq(ymd(.$Date.inicio), ymd(.$Date.termino), by = '1 day'),DT.ini = .$Date.inicio, Perda.dia = .$'Perda diaria'))
+
+Paradas.Hist.Diario$Date <- floor_date(Paradas.Hist.Diario$DateDay, unit="month")
+Paradas.Agreg.Hist <- aggregate(DateDay ~ Plataforma+Date+DT.ini+Perda.dia, Paradas.Hist.Diario, FUN = length)
+
+Paradas.Agreg.Hist$PerdaMonth <- (Paradas.Agreg.Hist$Perda.dia*Paradas.Agreg.Hist$DateDay)/days_in_month(as.Date(Paradas.Agreg.Hist$Date)) 
+
+Paradas.Agreg.Hist <- select(Paradas.Agreg.Hist, Plataforma, Date, PerdaMonth)
+
+colnames(Paradas.Agreg.Hist) <- c("UEP", "Date","PerdaMonth")
+
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-62"] <- "PETROBRAS 62"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-61"] <- "PETROBRAS 61"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-18"] <- "PETROBRAS XVIII"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-19"] <- "PETROBRAS XIX"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-20"] <- "PETROBRAS XX"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-25"] <- "PETROBRAS XXV"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-31"] <- "PETROBRAS XXXI"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-40"] <- "PETROBRAS XL"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-43"] <- "PETROBRAS XLIII"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-48"] <- "PETROBRAS 48"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-50"] <- "PETROBRAS 50"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-51"] <- "PETROBRAS 51"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-52"] <- "PETROBRAS 52"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-53"] <- "PETROBRAS 53"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-54"] <- "PETROBRAS 54"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-55"] <- "PETROBRAS 55"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-56"] <- "PETROBRAS 56"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-57"] <- "FPSO P-57"
+Paradas.Agreg.Hist$UEP[Paradas.Agreg.Hist$UEP == "P-58"] <- "FPSO P-58"
+
+  return(Paradas.Agreg.Hist)
+}
+```
+
+
+#Ajuste para IEP
+
+```{r dataset ajuste IEP}
+
+ajus.IEP = function(datasetIEP, Paradas.Agreg.Hist){
+
+Temps_month_uep <- aggregate(cbind(NumIEP = NumIEP, DenIEP)
+                             ~ Date + UEP, data=datasetIEP, FUN=sum)
+Temps_month_uep["IEP"] <- Temps_month_uep$NumIEP/Temps_month_uep$DenIEP  
+
+datasetIEP.ajuste <- left_join(Temps_month_uep,Paradas.Agreg.Hist,by = c(("Date" = "Date"),("UEP" = "UEP")))
+
+datasetIEP.ajuste[is.na(datasetIEP.ajuste)] <- 0
+
+datasetIEP.ajuste$NumIEP.ajuste =  ifelse(datasetIEP.ajuste$NumIEP + datasetIEP.ajuste$PerdaMonth>datasetIEP.ajuste$DenIEP,datasetIEP.ajuste$DenIEP,datasetIEP.ajuste$NumIEP+datasetIEP.ajuste$PerdaMonth)
+
+datasetIEP.ajuste$IEP.ajuste = datasetIEP.ajuste$NumIEP.ajuste / datasetIEP.ajuste$DenIEP  
+
+  return(datasetIEP.ajuste)
+}
+######################################################
+```
+
+
+
+# 2) Potencial
+# 2.1) processamento do potencial (ajusta o WI do potencial, poços novos e missing values) e Paradas (Agregaçaõ e Nomes)
+
+
+```{r WI Potencial PreProcess}
+#WI:
+WI = data.frame(UEP = c("PETROBRAS XXV","PETROBRAS 50","PETROBRAS 52","PETROBRAS 54","PETROBRAS 55","PETROBRAS 62","PETROBRAS 61", "FPCGZ"),
+                  WIbr  = c(99/100,91/100,75/100,75/100,75/100,75/100,63/100,53/100) )
+
+datasetPotencial.wi <- datasetPotencial
+datasetPotencial.wi <- left_join(datasetPotencial.wi,WI, by = c("UEP" = "UEP"))
+datasetPotencial.wi["Pot.WI"] = ifelse(is.na(datasetPotencial.wi$WIbr), datasetPotencial.wi$Potencial, datasetPotencial.wi$Potencial*datasetPotencial.wi$WIbr)
+
+datasetPotencial <- select(datasetPotencial.wi, "Date", "Pot.WI", "UEP")
+
+colnames(datasetPotencial) <- c("Date", "Potencial", "UEP")
+```
+
+```{r Potencial PreProcess}
+pot.sem.pocos = Ajus.pot.pocos(datasetPotencial, datasetPocosEntraram)
+
+##########Ajusta Paradas para no IEP add com a eficiência probabilistica:
+datasetParadas <- filter(datasetParadas, Origem == "Realizado")
+
+paradas.tratadas = Ajus.paradas(datasetParadas)
+#Teste para contar paradas (24 UEPs ok):
+Count.Paradas <- aggregate(PerdaMonth ~ UEP, paradas.tratadas, FUN = sum)
+
+#Lista com UEPs:
+datasetPot.UEP <- aggregate(PotencialMV ~  UEP , data=pot.sem.pocos,FUN=length) %>% select(-PotencialMV)
+datasetPot.UEP$UEP_idx <- 1:nrow(datasetPot.UEP)
+
+k = length(datasetPot.UEP$UEP)
+```
+
+
+## 2.2) Organiza historico para Potencial:
+```{r Organiza historico para Potencial}
+
+
+#PotTs = Train_BoxCox = fit1 = matrix(NA, ncol = k, nrow = n)
+
+#for(j in 1:k){
+#  PotTs[,j] <- ts(filter(pot.sem.pocos  %>% arrange(Date), UEP == datasetPot.UEP[j,1])$PotencialMV,start = c(2017, 01), end = c(2021, 12), frequency = 12) 
+#}
+#Potts <- PotTs #%>% t() 
+#Potts <- as.data.frame((Potts))
+
+```
+
+
+# 2.3) Organiza dados dos graficos Potencial:
+```{r organiza dados graficos potencial}
+Temps_month_pot.previa <- aggregate(datasetPotencial.copy$Potencial, by = list(datasetPotencial.copy$Date),
+                        FUN = function(x) sum(x, na.rm=T))
+
+Temps_month_pot <- aggregate(pot.sem.pocos$Potencial, by = list(pot.sem.pocos$Date),
+                        FUN = function(x) sum(x, na.rm=T))
+
+#Potencial.sem.desinvestimentos.sem.outliers:
+Temps_month_ajuste     <- aggregate(pot.sem.pocos$PotencialMV, by = list(pot.sem.pocos$Date), 
+                        FUN = function(x) sum(x, na.rm=T))
+#Potencial.Implantado:
+Temps_month_semoutlier     <- aggregate(pot.sem.pocos$PotencialAD, by = list(pot.sem.pocos$Date), 
+                        FUN = function(x) sum(x, na.rm=T))
+
+Potencial.Pleno      = ts(Temps_month_pot.previa$x,     start = c(2017, 01), end = c(2021, 12), frequency = 12)
+
+Potencial.sem.desinvestimentos = ts(Temps_month_pot$x, start = c(2017, 01), end = c(2021, 12), frequency = 12)
+
+Potencial.sem.desinvestimentos.sem.outliers     = ts(Temps_month_ajuste$x,     start = c(2017, 01), end = c(2021, 12), frequency = 12)
+
+Potencial.Implantado      = ts(Temps_month_semoutlier$x,     start = c(2017, 01), end = c(2021, 12), frequency = 12)
+```
+
+# 2.4) Organiza dados dos graficos Eficiencia:
+```{r organiza dados graficos potencial}
+Temps_IEPNum <- aggregate(datasetIEP.ajus$NumIEP.ajuste, by = list(datasetIEP.ajus$Date),
+                        FUN = function(x) sum(x, na.rm=T))
+
+Temps_IEPDen  <- aggregate(datasetIEP.ajus$DenIEP, by = list(datasetIEP.ajus$Date),
+                        FUN = function(x) sum(x, na.rm=T))
+
+IEP.Historico = ts(Temps_IEPNum$x/Temps_IEPDen$x, start = c(2017, 01), end = c(2021, 12), frequency = 12)
+
+```
+
+#Potencial.sem.desinvestimentos.sem.outliers:
+Temps_month_ajuste     <- aggregate(pot.sem.pocos$PotencialMV, by = list(pot.sem.pocos$Date), 
+                        FUN = function(x) sum(x, na.rm=T))
+#Potencial.Implantado:
+Temps_month_semoutlier     <- aggregate(pot.sem.pocos$PotencialAD, by = list(pot.sem.pocos$Date), 
+                        FUN = function(x) sum(x, na.rm=T))
+
+Potencial.Pleno      = ts(Temps_month_pot.previa$x,     start = c(2017, 01), end = c(2021, 12), frequency = 12)
+
+Potencial.sem.desinvestimentos = ts(Temps_month_pot$x, start = c(2017, 01), end = c(2021, 12), frequency = 12)
+
+Potencial.sem.desinvestimentos.sem.outliers     = ts(Temps_month_ajuste$x,     start = c(2017, 01), end = c(2021, 12), frequency = 12)
+
+Potencial.Implantado      = ts(Temps_month_semoutlier$x,     start = c(2017, 01), end = c(2021, 12), frequency = 12)
+
+
+#Fuções Series Temporais:
+
+##ARIMA:
+
+#Arima Pot: simulador (resultado dataframe):
+```{r dataframe simulador Potencial ARIMA}
+
+tic()
+set.seed(1)
+#Função ARIMA:
+###SelPlat = "CDAN"
+
+simular.ARIMA.Potencial = function(datasetPotencialAjustado, datasetPot.UEP, Nsim, SelPlat){
+  
+Pot_ARIMA.reps = matrix(NA, ncol = Nsim, nrow = nPrev)
+    for(j in 1:k){
+      nome <- paste0("replicacoes_historico_", j)
+      nome2 <- paste0("Pot_ARIMA_", j)
+      reps <- ts(filter(pot.sem.pocos %>% arrange(Date), UEP == datasetPot.UEP[j,1])$PotencialMV,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      ###if (SelPlat == datasetPot.UEP$UEP[j]) {
+      #reps %>% as.data.frame()
+      Pot_ARIMA = forecast(auto.arima(reps), h = nPrev)
+          for (i in 1:Nsim) {
+          Pot_ARIMA.reps[, i] = rtriang(nPrev, a = Pot_ARIMA$lower, 
+                                      b = Pot_ARIMA$upper, 
+                                      c = Pot_ARIMA$mean) 
+          }
+      Pot_ARIMA <- Pot_ARIMA.reps %>% as.data.frame()
+      Pot_ARIMA["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      Pot_ARIMA["UEP.y"] = datasetPot.UEP$UEP[j]
+      ###}
+      #Pot_ARIMA["UEP"] = datasetPot.UEP$UEP_idx[j]
+      Pot_ARIMA <- melt(Pot_ARIMA)
+      names(Pot_ARIMA)[3] <- "key"
+      assign(nome,reps)
+      assign(nome2,Pot_ARIMA)
+
+    }
+
+prevpotARIMAAuto <- dplyr::bind_rows(Pot_ARIMA_1,Pot_ARIMA_2,Pot_ARIMA_3,Pot_ARIMA_4,Pot_ARIMA_5,Pot_ARIMA_6,Pot_ARIMA_7,Pot_ARIMA_8,Pot_ARIMA_9,Pot_ARIMA_10,Pot_ARIMA_11,Pot_ARIMA_12,Pot_ARIMA_13,Pot_ARIMA_14,Pot_ARIMA_15,Pot_ARIMA_16,Pot_ARIMA_17,Pot_ARIMA_18,Pot_ARIMA_19,Pot_ARIMA_20,Pot_ARIMA_21,Pot_ARIMA_22)
+
+prevpotARIMAAuto$Date = as.Date(dmy(prevpotARIMAAuto$Date))
+
+
+  return(prevpotARIMAAuto)
+}
+toc()
+```
+
+
+######################################################
+
+
+
+#Arima Pot: dataframe Gráfico 
+```{r dataset Potencial ARIMA}
+
+#Função ARIMA:
+GRAF.ARIMA.Potencial = function(prevPotARIMA){
+
+ Pot.Iter = aggregate(value ~ key, prevPotARIMA, sum)
+ Pot.Iter = Pot.Iter %>% mutate(rank = rank(value)) %>% select(-value) #%>% group_by(UEP) 
+  
+  Pot.graf.ARIMA = inner_join(Pot.Iter,prevPotARIMA, by = c("key" = "key"))
+
+  
+ return(Pot.graf.ARIMA)
+}
+######################################################
+```
+
+#Arima Pot: TS P50
+```{r dataset Potencial ARIMA}
+
+#Função ARIMA:
+TS.ARIMA.Potencial = function(Pot.graf.ARIMA){
+
+tsPot.Arima.P50 = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  tsPot.Arima.P50[,j] <- ts(filter(Pot.graf.ARIMA, UEP.y == UEPs[j] & rank == rank50)$value, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+}
+
+tsPot.Arima.P50 <- as.data.frame(tsPot.Arima.P50)
+
+tsPot.Arima.P50["Total"] = rowSums(tsPot.Arima.P50)
+
+  return(tsPot.Arima.P50)
+}
+######################################################
+```
+
+#Arima IEP:
+```{r dataset IEP ARIMA}
+
+#Função ARIMA:
+simular.ARIMA.IEP = function(datasetIEP.ajus, datasetIEP.UEP, Nsim){
+#tic() 
+#library(extraDistr)
+
+set.seed(1)
+
+    for(j in 1:k){
+
+      nome2 <- paste0("IEP_ARIMA_", j)
+      repsNum <- ts(filter(datasetIEP.ajus %>% arrange(Date), UEP == datasetIEP.UEP[j,1])$NumIEP.ajuste,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      repsDen <- ts(filter(datasetIEP.ajus %>% arrange(Date), UEP == datasetIEP.UEP[j,1])$DenIEP,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      NumIEP_ARIMA = forecast(auto.arima(repsNum), h = nPrev)
+      DenIEP_ARIMA = forecast(auto.arima(repsDen), h = nPrev)
+      NumIEP_ARIMA.reps = DenIEP_ARIMA.reps = matrix(NA, ncol = Nsim, nrow = nPrev)
+      for (i in 1:Nsim) {
+      NumIEP_ARIMA.reps[, i] = rtriang(nPrev, a = NumIEP_ARIMA$lower, 
+                                  b = NumIEP_ARIMA$upper, 
+                                  c = NumIEP_ARIMA$mean) 
+      DenIEP_ARIMA.reps[, i] = rtriang(nPrev, a = DenIEP_ARIMA$lower, 
+                                  b = DenIEP_ARIMA$upper, 
+                                  c = DenIEP_ARIMA$mean)
+      }
+    NumIEP_ARIMA.reps <- NumIEP_ARIMA.reps %>% as.data.frame()
+    DenIEP_ARIMA.reps <- DenIEP_ARIMA.reps %>% as.data.frame()
+      NumIEP_ARIMA.reps["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      DenIEP_ARIMA.reps["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      NumIEP_ARIMA.reps["UEP.y"] = datasetIEP.UEP$UEP[j]
+      DenIEP_ARIMA.reps["UEP.y"] = datasetIEP.UEP$UEP[j]
+      NumIEP_ARIMA.melt <- melt(NumIEP_ARIMA.reps)
+      DenIEP_ARIMA.melt <- melt(DenIEP_ARIMA.reps)
+      names(NumIEP_ARIMA.melt)[3] <- "key"
+      names(DenIEP_ARIMA.melt)[3] <- "key"
+      names(NumIEP_ARIMA.melt)[4] <- "valueNum" 
+      names(DenIEP_ARIMA.melt)[4] <- "valueDen" 
+      IEP_ARIMA = inner_join(NumIEP_ARIMA.melt,DenIEP_ARIMA.melt, by= c("Date" = "Date", "UEP.y" = "UEP.y", "key" = "key"))
+      IEP_ARIMA["value"] = ifelse(IEP_ARIMA$valueNum/IEP_ARIMA$valueDen<0,0,ifelse(IEP_ARIMA$valueNum/IEP_ARIMA$valueDen>1,1,IEP_ARIMA$valueNum/IEP_ARIMA$valueDen))
+
+      assign(nome2,IEP_ARIMA)
+
+      
+    }    
+
+prevIEPARIMA <- dplyr::bind_rows(IEP_ARIMA_1,IEP_ARIMA_2,IEP_ARIMA_3,IEP_ARIMA_4,IEP_ARIMA_5,IEP_ARIMA_6,IEP_ARIMA_7,IEP_ARIMA_8,IEP_ARIMA_9,IEP_ARIMA_10,IEP_ARIMA_11,IEP_ARIMA_12,IEP_ARIMA_13,IEP_ARIMA_14,IEP_ARIMA_15,IEP_ARIMA_16,IEP_ARIMA_17,IEP_ARIMA_18,IEP_ARIMA_19,IEP_ARIMA_20,IEP_ARIMA_21,IEP_ARIMA_22)
+
+prevIEPARIMA$Date = as.Date(dmy(prevIEPARIMA$Date))
+
+  return(prevIEPARIMA)
+}
+#toc()
+```      
+
+```{r gRAF IEP ARIMA}
+
+#Função ARIMA:
+GRAF.ARIMA.IEP = function(prevIEPARIMA){
+
+
+ IEP.Iter = aggregate(cbind(valueNum,valueDen) ~ key, prevIEPARIMA, sum) %>% mutate(value = valueNum/valueDen) %>% mutate(rank = rank(value)) %>% select(-valueNum,-valueDen,-value)
+
+  IEP.graf.ARIMA = inner_join(IEP.Iter,prevIEPARIMA, by = c("key" = "key"))
+
+  
+  return(IEP.graf.ARIMA)
+} 
+```  
+
+
+```{r ts IEP ARIMA}  
+
+TS.ARIMA.IEP = function(IEP.graf.ARIMA){
+  
+#ts IEP
+tsIEP.Arima = tsIEP.Arima.Num = tsIEP.Arima.Den = matrix(NA, ncol = k, nrow = nPrev)
+
+for(j in 1:k){
+  tsIEP.Arima[,j] <- ts(filter(IEP.graf.ARIMA, UEP.y == UEPs[j] & rank == rank50)$value, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  tsIEP.Arima.Num[,j] <- ts(filter(IEP.graf.ARIMA, UEP.y == UEPs[j] & rank == rank50)$valueNum, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+  tsIEP.Arima.Den[,j] <- ts(filter(IEP.graf.ARIMA, UEP.y == UEPs[j] & rank == rank50)$valueDen, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+tsIEP.Arima <- as.data.frame(tsIEP.Arima)
+tsIEP.Arima.Num <- as.data.frame(tsIEP.Arima.Num)
+tsIEP.Arima.Den <- as.data.frame(tsIEP.Arima.Den)
+
+tsIEP.Arima.Num["TotalNum"] = rowSums(tsIEP.Arima.Num)
+tsIEP.Arima.Den["TotalDen"] = rowSums(tsIEP.Arima.Den)
+
+tsIEP.Arima["Total"] = tsIEP.Arima.Num$TotalNum / tsIEP.Arima.Den$TotalDen
+
+
+  return(tsIEP.Arima)
+}
+``` 
+
+## ETS: 
+
+#ETS Pot dataframe simulador:
+```{r dataframe simulador Potencial ETS}
+
+set.seed(1)
+
+#Função ETS:
+simular.ETS.Potencial = function(datasetPotencialAjustado, datasetPot.UEP, Nsim){
+  
+Pot_ETS.reps = matrix(NA, ncol = Nsim, nrow = nPrev)
+    for(j in 1:k){
+      nome <- paste0("replicacoes_historico_", j)
+      nome2 <- paste0("Pot_ETS_", j)
+      reps <- ts(filter(datasetPotencialAjustado  %>% arrange(Date), UEP == datasetPot.UEP[j,1])$PotencialMV,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      #reps %>% as.data.frame()
+      Pot_ETS = forecast(ets(reps), h = nPrev)
+      #Pot_ETS <- replicate(Nsim,  Pot_ETS$mean, simplify = TRUE) %>% as.data.frame()
+            for (i in 1:Nsim) {
+      Pot_ETS.reps[, i] = rtriang(nPrev, a = Pot_ETS$lower, 
+                                  b = Pot_ETS$upper, 
+                                  c = Pot_ETS$mean) 
+            }
+      Pot_ETS <- Pot_ETS.reps %>% as.data.frame()
+      Pot_ETS["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      #Pot_ETS["UEP"] = datasetPot.UEP$UEP_idx[j]
+      Pot_ETS["UEP.y"] = datasetPot.UEP$UEP[j]
+      Pot_ETS <- melt(Pot_ETS)
+      names(Pot_ETS)[3] <- "key"
+      assign(nome,reps)
+      assign(nome2,Pot_ETS)
+    }
+
+
+prevpotETSAuto <- dplyr::bind_rows(Pot_ETS_1,Pot_ETS_2,Pot_ETS_3,Pot_ETS_4,Pot_ETS_5,Pot_ETS_6,Pot_ETS_7,Pot_ETS_8,Pot_ETS_9,Pot_ETS_10,Pot_ETS_11,Pot_ETS_12,Pot_ETS_13,Pot_ETS_14,Pot_ETS_15,Pot_ETS_16,Pot_ETS_17,Pot_ETS_18,Pot_ETS_19,Pot_ETS_20,Pot_ETS_21,Pot_ETS_22)
+
+prevpotETSAuto$Date = as.Date(dmy(prevpotETSAuto$Date))
+
+  return(prevpotETSAuto)
+}
+######################################################
+```
+
+#ETS Pot: dataframe Gráfico 
+```{r dataset Potencial ETS}
+
+#Função ETS:
+GRAF.ETS.Potencial = function(prevPotETS){
+
+ Pot.Iter = aggregate(value ~ key, prevPotETS, sum)
+ Pot.Iter = Pot.Iter %>% mutate(rank = rank(value)) %>% select(-value) #%>% group_by(UEP) 
+  
+  Pot.graf.ETS = inner_join(Pot.Iter,prevPotETS, by = c("key" = "key"))
+
+  
+ return(Pot.graf.ETS)
+}
+######################################################
+```
+
+#ELM Pot: dataframe Gráfico 
+```{r dataset Potencial ELM}
+
+#Função ELM:
+GRAF.ELM.Potencial = function(prevPotELM){
+
+ Pot.Iter = aggregate(value ~ key, prevPotELM, sum)
+ Pot.Iter = Pot.Iter %>% mutate(rank = rank(value)) %>% select(-value) #%>% group_by(UEP) 
+  
+  Pot.graf.ELM = inner_join(Pot.Iter,prevPotELM, by = c("key" = "key"))
+
+  
+ return(Pot.graf.ELM)
+}
+######################################################
+```
+
+#ETS Pot:
+```{r dataset Potencial ETS}
+
+TS.ETS.Potencial = function(prevpotETSAuto){
+  
+#ts potencial
+tsPot.ETS.Auto = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  tsPot.ETS.Auto[,j] <- ts(filter(prevpotETSAuto, UEP.y == UEPs[j])$value, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+tsPot.ETS.Auto <- as.data.frame(tsPot.ETS.Auto)
+
+tsPot.ETS.Auto["Total"] = rowSums(tsPot.ETS.Auto)
+
+
+#tsPot.ETS.Auto22 = ts(tsPot.ETS.Auto$Total, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+
+  return(tsPot.ETS.Auto)
+}
+######################################################
+```
+
+#ETS IEP:
+```{r dataset IEP ETS}
+
+set.seed(1)
+#Função ETS:
+simular.ETS.IEP = function(datasetIEP.ajus, datasetIEP.UEP, Nsim){
+
+library(extraDistr)
+
+set.seed(1)
+
+    for(j in 1:k){
+
+      nome2 <- paste0("IEP_ETS_", j)
+      repsNum <- ts(filter(datasetIEP.ajus %>% arrange(Date), UEP == datasetIEP.UEP[j,1])$NumIEP.ajuste,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      repsDen <- ts(filter(datasetIEP.ajus %>% arrange(Date), UEP == datasetIEP.UEP[j,1])$DenIEP,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      NumIEP_ETS = forecast(ets(repsNum), h = nPrev)
+      DenIEP_ETS = forecast(ets(repsDen), h = nPrev)
+      NumIEP_ETS.reps = DenIEP_ETS.reps = matrix(NA, ncol = Nsim, nrow = nPrev)
+      for (i in 1:Nsim) {
+      NumIEP_ETS.reps[, i] = rtriang(nPrev, a = NumIEP_ETS$lower, 
+                                  b = NumIEP_ETS$upper, 
+                                  c = NumIEP_ETS$mean) 
+      DenIEP_ETS.reps[, i] = rtriang(nPrev, a = DenIEP_ETS$lower, 
+                                  b = DenIEP_ETS$upper, 
+                                  c = DenIEP_ETS$mean)
+      }
+    NumIEP_ETS.reps <- NumIEP_ETS.reps %>% as.data.frame()
+    DenIEP_ETS.reps <- DenIEP_ETS.reps %>% as.data.frame()
+      NumIEP_ETS.reps["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      DenIEP_ETS.reps["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      NumIEP_ETS.reps["UEP.y"] = datasetIEP.UEP$UEP[j]
+      DenIEP_ETS.reps["UEP.y"] = datasetIEP.UEP$UEP[j]
+      NumIEP_ETS.melt <- melt(NumIEP_ETS.reps)
+      DenIEP_ETS.melt <- melt(DenIEP_ETS.reps)
+      names(NumIEP_ETS.melt)[3] <- "key"
+      names(DenIEP_ETS.melt)[3] <- "key"
+      names(NumIEP_ETS.melt)[4] <- "valueNum" 
+      names(DenIEP_ETS.melt)[4] <- "valueDen" 
+      IEP_ETS = inner_join(NumIEP_ETS.melt,DenIEP_ETS.melt, by= c("Date" = "Date", "UEP.y" = "UEP.y", "key" = "key"))
+      IEP_ETS["value"] = ifelse(IEP_ETS$valueNum/IEP_ETS$valueDen<0,0,ifelse(IEP_ETS$valueNum/IEP_ETS$valueDen>1,1,IEP_ETS$valueNum/IEP_ETS$valueDen))
+
+      assign(nome2,IEP_ETS)
+
+      
+    }    
+
+prevIEPETS <- dplyr::bind_rows(IEP_ETS_1,IEP_ETS_2,IEP_ETS_3,IEP_ETS_4,IEP_ETS_5,IEP_ETS_6,IEP_ETS_7,IEP_ETS_8,IEP_ETS_9,IEP_ETS_10,IEP_ETS_11,IEP_ETS_12,IEP_ETS_13,IEP_ETS_14,IEP_ETS_15,IEP_ETS_16,IEP_ETS_17,IEP_ETS_18,IEP_ETS_19,IEP_ETS_20,IEP_ETS_21,IEP_ETS_22)
+
+prevIEPETS$Date = as.Date(dmy(prevIEPETS$Date))
+
+return(prevIEPETS)
+}
+
+```      
+
+```{r gRAF IEP ETS}
+#Função ETS:
+GRAF.ETS.IEP = function(prevIEPETS){
+
+
+ IEP.Iter = aggregate(cbind(valueNum,valueDen) ~ key, prevIEPETS, sum) %>% mutate(value = valueNum/valueDen) %>% mutate(rank = rank(value)) %>% select(-valueNum,-valueDen,-value)
+
+  IEP.graf.ETS = inner_join(IEP.Iter,prevIEPETS, by = c("key" = "key"))
+
+  
+  return(IEP.graf.ETS)
+} 
+```  
+
+```{r dataset IEP ETS}
+
+#Função ETS:
+TS.ETS.IEP = function(prevIEPETS){
+
+#ts IEP
+tsIEP.ETS = tsIEP.ETS.Num = tsIEP.ETS.Den = matrix(NA, ncol = k, nrow = nPrev)
+
+for(j in 1:k){
+  tsIEP.ETS[,j] <- ts(filter(prevIEPETS, UEP.y == UEPs[j])$value, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  tsIEP.ETS.Num[,j] <- ts(filter(prevIEPETS, UEP.y == UEPs[j])$valueNum, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+  tsIEP.ETS.Den[,j] <- ts(filter(prevIEPETS, UEP.y == UEPs[j])$valueDen, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+tsIEP.ETS <- as.data.frame(tsIEP.ETS)
+tsIEP.ETS.Num <- as.data.frame(tsIEP.ETS.Num)
+tsIEP.ETS.Den <- as.data.frame(tsIEP.ETS.Den)
+
+tsIEP.ETS.Num["TotalNum"] = rowSums(tsIEP.ETS.Num)
+tsIEP.ETS.Den["TotalDen"] = rowSums(tsIEP.ETS.Den)
+
+tsIEP.ETS["Total"] = tsIEP.ETS.Num$TotalNum / tsIEP.ETS.Den$TotalDen
+
+
+  return(tsIEP.ETS)
+}
+```
+
+
+## TBATs: 
+
+# TBATs pot: simulador
+```{r dataframe simulador Potencial TBATs}
+
+set.seed(1)
+#Função TBATs:
+simular.TBATs.Potencial  = function(datasetPotencialAjustado, datasetPot.UEP, Nsim){
+  
+Pot_TBATs.reps = matrix(NA, ncol = Nsim, nrow = nPrev)
+    for(j in 1:k){
+      nome <- paste0("replicacoes_historico_", j)
+      nome2 <- paste0("Pot_TBATs_", j)
+      reps <- ts(filter(datasetPotencialAjustado  %>% arrange(Date), UEP == datasetPot.UEP[j,1])$PotencialMV,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      #reps %>% as.data.frame()
+      Pot_TBATs = forecast(tbats(reps), h = nPrev)
+      #Pot_TBATs <- replicate(Nsim,  Pot_TBATs$mean, simplify = TRUE) %>% as.data.frame()
+            for (i in 1:Nsim) {
+      Pot_TBATs.reps[, i] = rtriang(nPrev, a = Pot_TBATs$lower, 
+                                  b = Pot_TBATs$upper, 
+                                  c = Pot_TBATs$mean) 
+            }
+      Pot_TBATs <- Pot_TBATs.reps %>% as.data.frame()
+      Pot_TBATs["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      #Pot_TBATs["UEP"] = datasetPot.UEP$UEP_idx[j]
+      Pot_TBATs["UEP.y"] = datasetPot.UEP$UEP[j]
+      Pot_TBATs <- melt(Pot_TBATs)
+      names(Pot_TBATs)[3] <- "key"
+      assign(nome,reps)
+      assign(nome2,Pot_TBATs)
+    }
+
+
+prevpotTBATsAuto <- dplyr::bind_rows(Pot_TBATs_1,Pot_TBATs_2,Pot_TBATs_3,Pot_TBATs_4,Pot_TBATs_5,Pot_TBATs_6,Pot_TBATs_7,Pot_TBATs_8,Pot_TBATs_9,Pot_TBATs_10,Pot_TBATs_11,Pot_TBATs_12,Pot_TBATs_13,Pot_TBATs_14,Pot_TBATs_15,Pot_TBATs_16,Pot_TBATs_17,Pot_TBATs_18,Pot_TBATs_19,Pot_TBATs_20,Pot_TBATs_21,Pot_TBATs_22)
+
+prevpotTBATsAuto$Date = as.Date(dmy(prevpotTBATsAuto$Date))
+
+  return(prevpotTBATsAuto)
+}
+######################################################
+```
+
+#TBATs Pot: dataframe Gráfico 
+```{r dataset Potencial TBATs}
+
+#Função TBATs:
+GRAF.TBATs.Potencial = function(prevPotTBATs){
+
+ Pot.Iter = aggregate(value ~ key, prevPotTBATs, sum)
+ Pot.Iter = Pot.Iter %>% mutate(rank = rank(value)) %>% select(-value) #%>% group_by(UEP) 
+  
+  Pot.graf.TBATs = inner_join(Pot.Iter,prevPotTBATs, by = c("key" = "key"))
+
+  
+ return(Pot.graf.TBATs)
+}
+######################################################
+```
+
+# TBATs pot: ts
+```{r dataset Potencial TBATs}
+
+#Função TBATs:
+TS.TBATs.Potencial  = function(prevpotTBATsAuto){
+  
+#ts potencial
+tsPot.TBATs.Auto = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  tsPot.TBATs.Auto[,j] <- ts(filter(prevpotTBATsAuto, UEP.y == UEPs[j])$value, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+tsPot.TBATs.Auto <- as.data.frame(tsPot.TBATs.Auto)
+
+tsPot.TBATs.Auto["Total"] = rowSums(tsPot.TBATs.Auto)
+
+
+#tsPot.TBATs.Auto22 = ts(tsPot.TBATs.Auto$Total, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+
+#MAPE:
+#MAPE.TBATs.Potencial = forecast::accuracy(ts.Pot22, tsPot.TBATs.Auto22)[5]
+  return(tsPot.TBATs.Auto)
+}
+######################################################
+```
+
+
+#TBATs IEP:
+```{r dataset IEP TBATs}
+set.seed(1)
+#Função TBATs:
+simular.TBATs.IEP = function(datasetIEP.ajus, datasetIEP.UEP, Nsim){
+
+set.seed(1)
+
+    for(j in 1:k){
+
+      nome2 <- paste0("IEP_TBATs_", j)
+      repsNum <- ts(filter(datasetIEP.ajus %>% arrange(Date), UEP == datasetIEP.UEP[j,1])$NumIEP.ajuste,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      repsDen <- ts(filter(datasetIEP.ajus %>% arrange(Date), UEP == datasetIEP.UEP[j,1])$DenIEP,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      NumIEP_TBATs = forecast(tbats(repsNum), h = nPrev)
+      DenIEP_TBATs = forecast(tbats(repsDen), h = nPrev)
+      NumIEP_TBATs.reps = DenIEP_TBATs.reps = matrix(NA, ncol = Nsim, nrow = nPrev)
+      for (i in 1:Nsim) {
+      NumIEP_TBATs.reps[, i] = rtriang(nPrev, a = NumIEP_TBATs$lower, 
+                                  b = NumIEP_TBATs$upper, 
+                                  c = NumIEP_TBATs$mean) 
+      DenIEP_TBATs.reps[, i] = rtriang(nPrev, a = DenIEP_TBATs$lower, 
+                                  b = DenIEP_TBATs$upper, 
+                                  c = DenIEP_TBATs$mean)
+      }
+    NumIEP_TBATs.reps <- NumIEP_TBATs.reps %>% as.data.frame()
+    DenIEP_TBATs.reps <- DenIEP_TBATs.reps %>% as.data.frame()
+      NumIEP_TBATs.reps["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      DenIEP_TBATs.reps["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      NumIEP_TBATs.reps["UEP.y"] = datasetIEP.UEP$UEP[j]
+      DenIEP_TBATs.reps["UEP.y"] = datasetIEP.UEP$UEP[j]
+      NumIEP_TBATs.melt <- melt(NumIEP_TBATs.reps)
+      DenIEP_TBATs.melt <- melt(DenIEP_TBATs.reps)
+      names(NumIEP_TBATs.melt)[3] <- "key"
+      names(DenIEP_TBATs.melt)[3] <- "key"
+      names(NumIEP_TBATs.melt)[4] <- "valueNum" 
+      names(DenIEP_TBATs.melt)[4] <- "valueDen" 
+      IEP_TBATs = inner_join(NumIEP_TBATs.melt,DenIEP_TBATs.melt, by= c("Date" = "Date", "UEP.y" = "UEP.y", "key" = "key"))
+      IEP_TBATs["value"] = ifelse(IEP_TBATs$valueNum/IEP_TBATs$valueDen<0,0,ifelse(IEP_TBATs$valueNum/IEP_TBATs$valueDen>1,1,IEP_TBATs$valueNum/IEP_TBATs$valueDen))
+
+      assign(nome2,IEP_TBATs)
+
+      
+    }    
+
+prevIEPTBATs <- dplyr::bind_rows(IEP_TBATs_1,IEP_TBATs_2,IEP_TBATs_3,IEP_TBATs_4,IEP_TBATs_5,IEP_TBATs_6,IEP_TBATs_7,IEP_TBATs_8,IEP_TBATs_9,IEP_TBATs_10,IEP_TBATs_11,IEP_TBATs_12,IEP_TBATs_13,IEP_TBATs_14,IEP_TBATs_15,IEP_TBATs_16,IEP_TBATs_17,IEP_TBATs_18,IEP_TBATs_19,IEP_TBATs_20,IEP_TBATs_21,IEP_TBATs_22)
+
+prevIEPTBATs$Date = as.Date(dmy(prevIEPTBATs$Date))
+
+  return(prevIEPTBATs)
+}
+
+```      
+
+```{r gRAF IEP TBATs}
+#Função TBATs:
+GRAF.TBATs.IEP = function(prevIEPTBATs){
+
+
+ IEP.Iter = aggregate(cbind(valueNum,valueDen) ~ key, prevIEPTBATs, sum) %>% mutate(value = valueNum/valueDen) %>% mutate(rank = rank(value)) %>% select(-valueNum,-valueDen,-value)
+
+  IEP.graf.TBATs = inner_join(IEP.Iter,prevIEPTBATs, by = c("key" = "key"))
+
+  
+  return(IEP.graf.TBATs)
+} 
+```  
+
+```{r dataset IEP TBATs}
+
+#Função TBATs:
+TS.TBATs.IEP = function(prevIEPTBATs){
+
+#ts IEP
+tsIEP.TBATs = tsIEP.TBATs.Num = tsIEP.TBATs.Den = matrix(NA, ncol = k, nrow = nPrev)
+
+for(j in 1:k){
+  tsIEP.TBATs[,j] <- ts(filter(prevIEPTBATs, UEP.y == UEPs[j])$value, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  tsIEP.TBATs.Num[,j] <- ts(filter(prevIEPTBATs, UEP.y == UEPs[j])$valueNum, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+  tsIEP.TBATs.Den[,j] <- ts(filter(prevIEPTBATs, UEP.y == UEPs[j])$valueDen, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+tsIEP.TBATs <- as.data.frame(tsIEP.TBATs)
+tsIEP.TBATs.Num <- as.data.frame(tsIEP.TBATs.Num)
+tsIEP.TBATs.Den <- as.data.frame(tsIEP.TBATs.Den)
+
+tsIEP.TBATs.Num["TotalNum"] = rowSums(tsIEP.TBATs.Num)
+tsIEP.TBATs.Den["TotalDen"] = rowSums(tsIEP.TBATs.Den)
+
+tsIEP.TBATs["Total"] = tsIEP.TBATs.Num$TotalNum / tsIEP.TBATs.Den$TotalDen
+
+
+  return(tsIEP.TBATs)
+}
+```
+
+## ELM:
+
+#ELM pot: Simular
+```{r dataframe simulador Potencial ELM}
+set.seed(1)
+#Função ELM:
+simular.ELM.Potencial = function(datasetPotencialAjustado, datasetPot.UEP, Nsim){
+  
+Pot_ELM.reps = matrix(NA, ncol = Nsim, nrow = nPrev)
+    for(j in 1:k){
+      nome <- paste0("replicacoes_historico_", j)
+      nome2 <- paste0("Pot_ELM_", j)
+      reps <- ts(filter(datasetPotencialAjustado  %>% arrange(Date), UEP == datasetPot.UEP[j,1])$PotencialMV,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      set.seed(1)
+      Pot_ELM = elm(reps)
+      Pot_ELM <- forecast(Pot_ELM$y, h = nPrev)
+      #Pot_ELM <- replicate(Nsim,  Pot_ELM$mean, simplify = TRUE) %>% as.data.frame()
+      for (i in 1:Nsim) {
+      Pot_ELM.reps[, i] = rtriang(nPrev, a = Pot_ELM$lower, 
+                                  b = Pot_ELM$upper, 
+                                  c = Pot_ELM$mean) 
+                        }
+      Pot_ELM = Pot_ELM.reps %>% as.data.frame()
+      Pot_ELM["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      #ot_ELM["UEP"] = datasetPot.UEP$UEP_idx[j]
+      Pot_ELM["UEP.y"] = datasetPot.UEP$UEP[j]
+      Pot_ELM <- melt(Pot_ELM)
+      names(Pot_ELM)[3] <- "key"
+      assign(nome,reps)
+      assign(nome2,Pot_ELM)
+    }
+
+
+prevpotELMAuto <- dplyr::bind_rows(Pot_ELM_1,Pot_ELM_2,Pot_ELM_3,Pot_ELM_4,Pot_ELM_5,Pot_ELM_6,Pot_ELM_7,Pot_ELM_8,Pot_ELM_9,Pot_ELM_10,Pot_ELM_11,Pot_ELM_12,Pot_ELM_13,Pot_ELM_14,Pot_ELM_15,Pot_ELM_16,Pot_ELM_17,Pot_ELM_18,Pot_ELM_19,Pot_ELM_20,Pot_ELM_21,Pot_ELM_22)
+
+prevpotELMAuto$Date = as.Date(dmy(prevpotELMAuto$Date))
+
+  return(prevpotELMAuto)
+}
+######################################################
+```
+
+#ELM pot: TS
+```{r dataset Potencial ELM}
+
+#Função ELM:
+TS.ELM.Potencial = function(prevpotELMAuto){
+  
+#ts potencial
+tsPot.ELM.Auto = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  tsPot.ELM.Auto[,j] <- ts(filter(prevpotELMAuto, UEP.y == UEPs[j])$value, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+tsPot.ELM.Auto <- as.data.frame(tsPot.ELM.Auto)
+
+tsPot.ELM.Auto["Total"] = rowSums(tsPot.ELM.Auto)
+
+
+#tsPot.ELM.Auto22 = ts(tsPot.ELM.Auto$Total, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+
+#MAPE:
+#MAPE.ELM.Potencial = forecast::accuracy(ts.Pot22, tsPot.ELM.Auto22)[5]
+  return(tsPot.ELM.Auto)
+}
+######################################################
+```
+
+
+#ELM IEP:
+```{r dataset IEP ELM}
+set.seed(1)
+#Função ELM:
+simular.ELM.IEP = function(datasetIEP.ajus, datasetIEP.UEP, Nsim){
+
+library(extraDistr)
+
+set.seed(1)
+
+    for(j in 1:k){
+
+      nome2 <- paste0("IEP_ELM_", j)
+      repsNum <- ts(filter(datasetIEP.ajus %>% arrange(Date), UEP == datasetIEP.UEP[j,1])$NumIEP.ajuste,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      repsDen <- ts(filter(datasetIEP.ajus %>% arrange(Date), UEP == datasetIEP.UEP[j,1])$DenIEP,start = c(2017, 01), end = c(2021, 12), frequency = 12)
+      NumIEP_ELM = elm(repsNum)
+      NumIEP_ELM <- forecast(NumIEP_ELM$y, h = nPrev)
+
+      DenIEP_ELM = elm(repsDen)
+      DenIEP_ELM <- forecast(DenIEP_ELM$y, h = nPrev)
+      NumIEP_ELM.reps = DenIEP_ELM.reps = matrix(NA, ncol = Nsim, nrow = nPrev)
+      for (i in 1:Nsim) {
+      NumIEP_ELM.reps[, i] = rtriang(nPrev, a = NumIEP_ELM$lower, 
+                                  b = NumIEP_ELM$upper, 
+                                  c = NumIEP_ELM$mean) 
+      DenIEP_ELM.reps[, i] = rtriang(nPrev, a = DenIEP_ELM$lower, 
+                                  b = DenIEP_ELM$upper, 
+                                  c = DenIEP_ELM$mean)
+      }
+    NumIEP_ELM.reps <- NumIEP_ELM.reps %>% as.data.frame()
+    DenIEP_ELM.reps <- DenIEP_ELM.reps %>% as.data.frame()
+      NumIEP_ELM.reps["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      DenIEP_ELM.reps["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+      NumIEP_ELM.reps["UEP.y"] = datasetIEP.UEP$UEP[j]
+      DenIEP_ELM.reps["UEP.y"] = datasetIEP.UEP$UEP[j]
+      NumIEP_ELM.melt <- melt(NumIEP_ELM.reps)
+      DenIEP_ELM.melt <- melt(DenIEP_ELM.reps)
+      names(NumIEP_ELM.melt)[3] <- "key"
+      names(DenIEP_ELM.melt)[3] <- "key"
+      names(NumIEP_ELM.melt)[4] <- "valueNum" 
+      names(DenIEP_ELM.melt)[4] <- "valueDen" 
+      IEP_ELM = inner_join(NumIEP_ELM.melt,DenIEP_ELM.melt, by= c("Date" = "Date", "UEP.y" = "UEP.y", "key" = "key"))
+      IEP_ELM["value"] = ifelse(IEP_ELM$valueNum/IEP_ELM$valueDen<0,0,ifelse(IEP_ELM$valueNum/IEP_ELM$valueDen>1,1,IEP_ELM$valueNum/IEP_ELM$valueDen))
+
+      assign(nome2,IEP_ELM)
+
+      
+    }    
+
+prevIEPELM <- dplyr::bind_rows(IEP_ELM_1,IEP_ELM_2,IEP_ELM_3,IEP_ELM_4,IEP_ELM_5,IEP_ELM_6,IEP_ELM_7,IEP_ELM_8,IEP_ELM_9,IEP_ELM_10,IEP_ELM_11,IEP_ELM_12,IEP_ELM_13,IEP_ELM_14,IEP_ELM_15,IEP_ELM_16,IEP_ELM_17,IEP_ELM_18,IEP_ELM_19,IEP_ELM_20,IEP_ELM_21,IEP_ELM_22)
+
+prevIEPELM$Date = as.Date(dmy(prevIEPELM$Date))
+
+  return(prevIEPELM)
+}
+
+```      
+
+```{r gRAF IEP ELM}
+#Função ELM:
+GRAF.ELM.IEP = function(prevIEPELM){
+
+
+ IEP.Iter = aggregate(cbind(valueNum,valueDen) ~ key, prevIEPELM, sum) %>% mutate(value = valueNum/valueDen) %>% mutate(rank = rank(value)) %>% select(-valueNum,-valueDen,-value)
+
+  IEP.graf.ELM = inner_join(IEP.Iter,prevIEPELM, by = c("key" = "key"))
+
+  
+  return(IEP.graf.ELM)
+} 
+```
+
+```{r dataset IEP ELM}
+
+#Função ELM:
+TS.ELM.IEP = function(prevIEPELM){
+
+#ts IEP
+tsIEP.ELM = tsIEP.ELM.Num = tsIEP.ELM.Den = matrix(NA, ncol = k, nrow = nPrev)
+
+for(j in 1:k){
+  tsIEP.ELM[,j] <- ts(filter(prevIEPELM, UEP.y == UEPs[j])$value, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  tsIEP.ELM.Num[,j] <- ts(filter(prevIEPELM, UEP.y == UEPs[j])$valueNum, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+  tsIEP.ELM.Den[,j] <- ts(filter(prevIEPELM, UEP.y == UEPs[j])$valueDen, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+tsIEP.ELM <- as.data.frame(tsIEP.ELM)
+tsIEP.ELM.Num <- as.data.frame(tsIEP.ELM.Num)
+tsIEP.ELM.Den <- as.data.frame(tsIEP.ELM.Den)
+
+tsIEP.ELM.Num["TotalNum"] = rowSums(tsIEP.ELM.Num)
+tsIEP.ELM.Den["TotalDen"] = rowSums(tsIEP.ELM.Den)
+
+tsIEP.ELM["Total"] = tsIEP.ELM.Num$TotalNum / tsIEP.ELM.Den$TotalDen
+
+
+  return(tsIEP.ELM)
+}
+```
+
+
+##Funções
+
+#Função Poços Novos:
+# Pre-Processamento Poços: 
+## Nomeação das colunas e tipo das colunas dos datasets 
+###Tratando a análise de risco:
+
+
+```{r Pocos function}
+
+Ano = "2022-01-01"
+AnoFim = "2022-12-01"
+year = year(AnoFim)
+FinalAno = ceiling_date(ymd(AnoFim), "year") - days(1)
+#
+CurvaPocosNovos = CurvaPocosNovos[1:4]
+Analisederisco = Analisederisco[1:5]
+colnames(CurvaPocosNovos) <- c("Date", "Poco", "Curva", "Dt.Entrada")
+CurvaPocosNovos$Date <- strptime(CurvaPocosNovos$Date, "%Y-%m-%d")
+CurvaPocosNovos$Date <- as.POSIXct(CurvaPocosNovos$Date)
+CurvaPocosNovos$Dt.Entrada <- strptime(CurvaPocosNovos$Dt.Entrada, "%Y-%m-%d")
+CurvaPocosNovos$Dt.Entrada <- as.POSIXct(CurvaPocosNovos$Dt.Entrada)
+
+colnames(Analisederisco) <- c("Poço", "Cat.Otimista", "Cat.Conservador", "Otimista","Conservador")
+Analisederisco["Mais.Provavel"] = 0
+
+#Nova.Dt.Calculada.Simulada
+
+
+Pocos.Sim = function(CurvaPocosNovos, Analisederisco, Nsim){
+
+
+#Curva de Poços Novos a entrar:
+
+Poco.Consolidado <- aggregate(Curva ~ Poco + Dt.Entrada , data=CurvaPocosNovos,FUN=mean)
+
+#Agregar curva por poço:
+Poco.Consolidado <- aggregate(Curva ~ Poco + Dt.Entrada , data=CurvaPocosNovos,FUN=mean)
+
+Poco.Consolidado <- Poco.Consolidado %>% arrange(Poco)
+
+
+# Dias no ano e BOE/Dia
+Poco.Consolidado$Dt.Entrada <- (format(as.Date(Poco.Consolidado$Dt.Entrada), "%d-%m-%Y"))
+names(Poco.Consolidado) <- c("Poço","Dt.Entrada", "Curva")
+
+Dias.Temp = as.integer(difftime(FinalAno,dmy(Poco.Consolidado$Dt.Entrada), units = "days"))
+
+Poco.Consolidado["Dias.Temp"] <- Dias.Temp
+Poco.Consolidado["Curva BOED"] <- Poco.Consolidado$Curva/Poco.Consolidado$Dias.Temp
+
+Poco.Teste <- aggregate(Curva ~ Poco + Dt.Entrada, data=CurvaPocosNovos,FUN=mean)
+Poco.Teste<- Poco.Teste %>% arrange(Poco)
+Analisederisco["Dt.Entrada"] <- Poco.Teste$Dt.Entrada
+
+
+# Simulação Poços Novos: - ano especifico
+
+library(extraDistr)
+Analisederisco[is.na(Analisederisco)] <- 0
+Analisederisco <- Analisederisco %>% arrange(Poço)
+
+#Simulação Monte Carlo :
+n = length(Analisederisco$Poço)
+simulacoes_montecarlo  = matrix(NA, ncol = Nsim, nrow = n)
+
+set.seed(1)
+
+for (i in 1:Nsim) {
+
+  simulacoes_montecarlo[, i] = rtriang(n, a = Analisederisco$Otimista, b = Analisederisco$Conservador, c = Analisederisco$Mais.Provavel)
+}
+
+simulacoes_montecarlo[is.na( simulacoes_montecarlo)] <- 0
+
+Datas.Simuladas = as.data.frame(simulacoes_montecarlo)
+
+Datas.Simuladas <- round(Datas.Simuladas, digits = 0)
+
+Datas.Simuladas["Dt.Entrada"] = Poco.Consolidado$Dt.Entrada
+
+Datas.Simuladas["Poco"] = Analisederisco$Poço
+
+Datas.Simuladas = Datas.Simuladas[,c(Nsim+2,Nsim+1,1:Nsim)]
+
+return(Datas.Simuladas)
+}
+
+
+transf.dt.sim = function(Datas.Simuladas, Nsim){
+  
+n = length(Datas.Simuladas$Poco)
+Nova.Dt.Calculada.Simulada = Nova.Dt.Calculada  = matrix(NA, ncol = Nsim, nrow = n)
+
+for (i in 1:Nsim) {
+  Nova.Dt.Calculada[, i] = as.Date(dmy(Datas.Simuladas[,2]))+ days(Datas.Simuladas[,2+i])
+
+}
+
+Nova.Dt.Calculada.Simulada = as.data.frame(Nova.Dt.Calculada.Simulada)
+
+for (i in 1:Nsim) {
+Nova.Dt.Calculada.Simulada[, i] = as.Date(Nova.Dt.Calculada[, i], origin  ="1970-01-01")
+}
+
+Nova.Dt.Calculada.Simulada = format(Nova.Dt.Calculada.Simulada, format="%d/%m/%Y")
+
+
+#Nova.Dt.Calculada.Simulada
+
+return(Nova.Dt.Calculada.Simulada)
+}
+
+cons.poco = function(CurvaPocosNovos){
+
+    
+Poco.Consolidado <- aggregate(Curva ~ Poco + Dt.Entrada , data=CurvaPocosNovos,FUN=mean)
+
+#Agregar curva por poço:
+Poco.Consolidado <- aggregate(Curva ~ Poco + Dt.Entrada , data=CurvaPocosNovos,FUN=mean)
+
+Poco.Consolidado <- Poco.Consolidado %>% arrange(Poco)
+
+
+# Dias no ano e BOE/Dia
+Poco.Consolidado$Dt.Entrada <- (format(as.Date(Poco.Consolidado$Dt.Entrada), "%d-%m-%Y"))
+names(Poco.Consolidado) <- c("Poço","Dt.Entrada", "Curva")
+
+Dias.Temp = as.integer(difftime(FinalAno,dmy(Poco.Consolidado$Dt.Entrada), units = "days"))
+
+Poco.Consolidado["Dias.Temp"] <- Dias.Temp
+Poco.Consolidado["Curva BOED"] <- Poco.Consolidado$Curva/Poco.Consolidado$Dias.Temp
+
+Poco.Consolidado2 <- Poco.Consolidado
+return(Poco.Consolidado2)
+}
+
+
+
+Pocos.curva.Sim = function(Nova.Dt.Calculada.Simulada, Poco.Consolidado2, Datas.Simuladas, CurvaPocosNovos, Analisederisco.copy, Nsim){
+
+n = length(Poco.Consolidado2$Poço)    
+Boed = days.ano = matrix(NA, ncol = Nsim, nrow = n)
+    
+#Calculo da nova Curva - Para cada Iteração
+for (i in 1:Nsim) {
+  days.ano[, i] = as.integer(difftime(FinalAno,dmy(Nova.Dt.Calculada.Simulada[, i]), units = "days"))
+  Boed[, i] = ifelse(days.ano[, i]*Poco.Consolidado2$`Curva BOED` > 0, days.ano[, i]*Poco.Consolidado2$`Curva BOED`, 0)
+}
+
+  Boed = as.data.frame(Boed)
+
+  BOE = matrix(0, ncol = Nsim)
+
+  for (k in 1:n) {
+    for (i in 1:Nsim) {
+      BOE[,i] = BOE[,i]+Boed[k, i]
+    }   
+  }
+
+  Boed["Poço"] <- Poco.Consolidado2$Poço
+  Nova.Dt.Calculada.Simulada["Poço"] <- Poco.Consolidado2$Poço  
+  BOE.PocosNovos.2022 = as.data.frame(BOE)
+  BOE.PocosNovos.2022 <- t(BOE.PocosNovos.2022)
+  #hist(BOE.PocosNovos.2022)
+  
+melt(Boed, id="Poço") -> Simulacoes.Pocos.Riscada
+melt(Datas.Simuladas, id=c("Poco","Dt.Entrada")) -> Simulacoes.Pocos.Datas
+colnames(Simulacoes.Pocos.Riscada) <- c("Poco","variable","Boed")
+
+Pocos.sim <- left_join(Simulacoes.Pocos.Riscada, Simulacoes.Pocos.Datas, by = c(("Poco" = "Poco"),("variable" = "variable")))
+
+Pocos.sim["Nova.Dt"] = as.Date(dmy(Pocos.sim$Dt.Entrada))+ days(Pocos.sim$value)
+
+#Concatena datas simuladas com curva planejada:
+
+Pocos.sim2 <- inner_join(Pocos.sim, CurvaPocosNovos, by = c("Poco" = "Poco"), relationship = "many-to-many")
+
+#Calculo da curva simulada:
+Pocos.sim2["Mes.Inicio"] = month(Pocos.sim2$Dt.Entrada.y)
+Pocos.sim2["Ano.Inicio"] = year(Pocos.sim2$Dt.Entrada.y)
+
+Pocos.sim2["Mes.Curva"] = month(Pocos.sim2$Date)
+Pocos.sim2["Ano.Curva"] = year(Pocos.sim2$Date)
+
+#Mês e ano da data calculada:
+Pocos.sim2["Mes.Inicio.Calculada"] = month(Pocos.sim2$Nova.Dt)
+Pocos.sim2["Ano.Inicio.Calculada"] = year(Pocos.sim2$Nova.Dt)
+
+#Caso MesInicio = Curva:
+Pocos.sim2 <- Pocos.sim2 %>%
+  mutate(SeMesInicio = ifelse(Mes.Curva == Mes.Inicio & Ano.Curva == Ano.Inicio,1, 0))
+
+#Dias no mes:
+NumberOfDays <- function(date) 
+return(as.numeric(format(as.Date(paste0(format(date,format="%Y"),formatC(ifelse(format(date,format="%m")=="12",0,as.numeric(format(date,format="%m")))+1,width=2,format="d",flag="0"),"01"),"%Y%m%d")-1,format="%d")))
+
+Pocos.sim2["Dias.no.Mes"] = NumberOfDays(as.Date(Pocos.sim2$Date))
+
+#Monthdiff:
+elapsed_months <- function(end_date, start_date) {
+    ed <- as.POSIXlt(end_date)
+    sd <- as.POSIXlt(start_date)
+    12 * (ed$year - sd$year) + (ed$mon - sd$mon)
+}
+
+Pocos.sim2["Month.Diff"] = elapsed_months(as.Date(Pocos.sim2$Nova.Dt), as.Date(Pocos.sim2$Dt.Entrada.y))
+
+#Ordena os poços:
+Pocos.sim2 <- arrange(Pocos.sim2,desc(Pocos.sim2$Poco))
+
+#Curva Auxiliar:
+Pocos.sim2 <- Pocos.sim2 %>%
+  mutate(Curva.Boed.Aux = ifelse(Mes.Inicio+Month.Diff > hPocos, 0, Pocos.sim2$'Boed'))
+
+#Curva ajuste:
+Pocos.sim2["Curva.Boed.Ajuste"] = 0
+
+Pocos.sim2$Curva.Boed.Ajuste <- sapply(seq_along(Pocos.sim2$Month.Diff), function(x) {
+      indx = x - Pocos.sim2$Month.Diff[x]
+     if(indx > 0)
+        Pocos.sim2$Curva.Boed.Aux[indx]
+     else
+        NA
+})
+
+Pocos.sim2$Curva.Boed.Ajuste <- ifelse(Pocos.sim2$Month.Diff < 0 & Pocos.sim2$Curva.Boed.Ajuste == 0 & Pocos.sim2$Date > Pocos.sim2$Nova.Dt, Pocos.sim2$Curva.Boed.Aux, Pocos.sim2$Curva.Boed.Ajuste)
+
+#Caso MesInicio ajustado = Curva:
+Pocos.sim2 <- Pocos.sim2 %>%
+  mutate(SeMesInicio.Ajuste = ifelse(Mes.Curva == Mes.Inicio.Calculada & Ano.Curva == Ano.Inicio.Calculada,1, 0))
+
+#Dias de produção no mes ajustado:
+Pocos.sim2 <- Pocos.sim2 %>%
+  mutate(Dias.Prod.Mes.Ajustado = ifelse(Ano.Curva >= Ano.Inicio.Calculada & Mes.Curva >= Mes.Inicio.Calculada &  SeMesInicio.Ajuste == 1, Dias.no.Mes-day(Nova.Dt), ifelse(Ano.Curva > Ano.Inicio.Calculada, Dias.no.Mes, ifelse(Ano.Curva >= Ano.Inicio.Calculada & Mes.Curva >= Mes.Inicio.Calculada, Dias.no.Mes, 0))))
+
+Pocos.sim2["Curva.Ajustada"] = Pocos.sim2$Dias.Prod.Mes.Ajustado * Pocos.sim2$Curva.Boed.Ajuste * 1000
+
+## Agregar simulacao de poços novos:
+#Pocos e Plataformas:
+Analisederisco.copy.2<- select(Analisederisco.copy, c(1,6))
+
+#Se tiver NA troca por 0:
+Pocos.sim2[is.na(Pocos.sim2)] <- 0
+
+Pocos.sim3 = data.frame(select(Pocos.sim2, c("Poco", "variable", "Date", "Curva.Ajustada")))
+
+Pocos.Agregado <- inner_join(Pocos.sim3, Analisederisco.copy.2, by = c("Poco" = "Nome"))
+
+PocosSimulado.Agregado  <- aggregate(cbind(Curva.Ajustada) ~ variable + Date + Plataforma , data=Pocos.Agregado,FUN=sum, na.rm=TRUE, na.action = na.pass)
+
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-62"] <- "PETROBRAS 62"
+#PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-61"] <- "PETROBRAS 61"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-18"] <- "PETROBRAS XVIII"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-19"] <- "PETROBRAS XIX"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-20"] <- "PETROBRAS XX"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-25"] <- "PETROBRAS XXV"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-31"] <- "PETROBRAS XXXI"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-40"] <- "PETROBRAS XL"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-43"] <- "PETROBRAS XLIII"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-48"] <- "PETROBRAS 48"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-50"] <- "PETROBRAS 50"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-51"] <- "PETROBRAS 51"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-52"] <- "PETROBRAS 52"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-53"] <- "PETROBRAS 53"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-54"] <- "PETROBRAS 54"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-55"] <- "PETROBRAS 55"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-56"] <- "PETROBRAS 56"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-57"] <- "FPSO P-57"
+PocosSimulado.Agregado$Plataforma[PocosSimulado.Agregado$Plataforma == "P-58"] <- "FPSO P-58"
+
+return(PocosSimulado.Agregado)
+}
+
+```
+
+#Função Paradas:
+```{r Paradas Programadas}
+
+Paradas.Sim = function(ParadasProgramadas, datasetClusterParada, Nsim){
+  
+## 5.1) Ajuste dos dados da Clusterização: Insere parâmetros de duração adicional por cluster de Parada para simulação. 
+### Triangular com Mínimo, médio e máximo do realizado por cluster.
+
+datasetClusterParada <- na.omit(datasetClusterParada)
+datasetClusterParada["Dur.adicional.Med"] <- ifelse(datasetClusterParada$Dur.Med.Real - datasetClusterParada$Dur.Med.PAN<0,0,  round(datasetClusterParada$Dur.Med.Real - datasetClusterParada$Dur.Med.PAN, digits = 0 ))
+
+datasetClusterParada["Dur.adicional.Min"] <- ifelse(datasetClusterParada$Dur.Min.Real - datasetClusterParada$Dur.Med.PAN<0,0,  round(datasetClusterParada$Dur.Min.Real - datasetClusterParada$Dur.Med.PAN, digits = 0 ))
+
+datasetClusterParada["Dur.adicional.Max"] <- ifelse(datasetClusterParada$Dur.Max.Real - datasetClusterParada$Dur.Med.PAN<0,0,  round(datasetClusterParada$Dur.Max.Real - datasetClusterParada$Dur.Med.PAN, digits = 0 ))
+
+## 5.2) Ajuste dos dados de Paradas: Dataset de dias para agregado por UEP e DataInicio; Join entre dados clusterização e Paradas; Insere dados para inicio ser durante o ano (não necessariamente no inicio do ano).
+
+Paradas_UEP <- aggregate(Dur ~ UEP+DataInicio+Cluster, ParadasProgramadas, FUN = mean)
+
+Cluster.Parada <- select(datasetClusterParada,c(1,18,19,20))
+Paradas.Agregado <- inner_join(Paradas_UEP, Cluster.Parada, by = c("Cluster" = "Value.fit.cluster"))
+
+#Paradas.Agregado$adia.p10 = 0
+#Paradas.Agregado$adia.p50 = 30
+#Paradas.Agregado$adia.p90 = 90
+
+
+## 5.3) Simulação da duração adicional das paradas: Uso da triangular.
+
+#Simulação Monte Carlo :
+library(tidyverse)
+#library(triangle)
+library(extraDistr)
+
+n = length(Paradas.Agregado$UEP)
+
+data.Inicio.Parada = data.IParada = data.FParada = dias.Dur = Paradas.Dur.Sim = dias.atraso = matrix(NA, ncol = Nsim, nrow = n)
+
+set.seed(1)
+
+for (i in 1:Nsim) {
+  
+# sorteia dias de atraso
+    #dias.atraso[, i] = as.integer(rtriang(n, a = Paradas.Agregado$adia.p10, 
+    #                             b = Paradas.Agregado$adia.p90, 
+    #                             c = Paradas.Agregado$adia.p50))
+    
+    #data.Inicio.Parada[, i] = as.Date(ymd(Paradas.Agregado$DataInicio)) + dias.atraso[, i]
+    data.IParada[, i] = as.Date(ymd(Paradas.Agregado$DataInicio)) #+ dias.atraso[, i]
+
+
+# sorteia duracao adicional
+    dias.Dur[, i] = as.integer(rtriang(n, a = Paradas.Agregadvho$Dur.adicional.Min, 
+                                  b = Paradas.Agregado$Dur.adicional.Max, 
+                                  c = Paradas.Agregado$Dur.adicional.Med))
+    
+# soma data inicio com duracao e duracao adicional:
+data.FParada[, i] = data.IParada[, i] + Paradas.Agregado$Dur + dias.Dur[, i]
+
+Paradas.Dur.Sim[, i] = data.FParada[, i] - data.IParada[, i]
+
+
+}
+
+data.IParada = as.data.frame(data.IParada)
+data.FParada = as.data.frame(data.FParada)
+#data.IParada = format(data.IParada, format="%d/%m/%Y")
+Paradas.Dur.Sim = as.data.frame(Paradas.Dur.Sim)
+
+# Join Paradas e Cluster
+Paradas.Dur.Sim["Plataforma"] <- Paradas.Agregado$UEP
+data.FParada["Plataforma"] <- Paradas.Agregado$UEP
+data.IParada["Plataforma"] <- Paradas.Agregado$UEP
+Paradas.Dur.Sim2 = melt(Paradas.Dur.Sim)
+Paradas.FPar = melt(data.FParada)
+Paradas.IPar = melt(data.IParada)
+
+Paradas.Dur.Sim2["DT.ini"] = as.Date(Paradas.IPar$value, origin  ="1970-01-01" )
+Paradas.Dur.Sim2["DT.fim"] = as.Date(Paradas.FPar$value, origin  ="1970-01-01" )
+
+#Paradas diario e agregado
+Paradas.Dur.Sim.Diario <- Paradas.Dur.Sim2 %>% 
+ rowwise() %>%
+ do(data.frame(Plataforma = .$Plataforma, DateDay = seq(ymd(.$DT.ini), ymd(.$DT.fim), by = '1 day'),DT.ini = .$DT.ini, variable = .$variable))
+
+Paradas.Dur.Sim.Diario$Date <- floor_date(Paradas.Dur.Sim.Diario$DateDay, unit="month")
+Paradas.Agreg.Sim <- aggregate(DateDay ~ Plataforma+Date+DT.ini+variable, Paradas.Dur.Sim.Diario, FUN = length)
+
+
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-62"] <- "PETROBRAS 62"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-61"] <- "PETROBRAS 61"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-18"] <- "PETROBRAS XVIII"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-19"] <- "PETROBRAS XIX"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-20"] <- "PETROBRAS XX"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-25"] <- "PETROBRAS XXV"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-31"] <- "PETROBRAS XXXI"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-40"] <- "PETROBRAS XL"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-43"] <- "PETROBRAS XLIII"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-48"] <- "PETROBRAS 48"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-50"] <- "PETROBRAS 50"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-51"] <- "PETROBRAS 51"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-52"] <- "PETROBRAS 52"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-53"] <- "PETROBRAS 53"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-54"] <- "PETROBRAS 54"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-55"] <- "PETROBRAS 55"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-56"] <- "PETROBRAS 56"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-57"] <- "FPSO P-57"
+Paradas.Agreg.Sim$Plataforma[Paradas.Agreg.Sim$Plataforma == "P-58"] <- "FPSO P-58"
+
+  return(Paradas.Agreg.Sim)
+}
+```
+
+
+#Função de seleção plataforma ou total:
+```{r ts plataforma}
+Plat.Sel = function(Plataforma){
+  
+if (Plataforma == "CDAN"){
+Plat <- 1 }
+if (Plataforma == "CVIT"){
+Plat <- 2 }
+if (Plataforma == "FPCGZ"){
+Plat <- 3 }
+if (Plataforma == "FPNIT"){
+Plat <- 4 }
+if (Plataforma == "FPSO-P57"){
+Plat <- 5 }
+if (Plataforma == "FPSO-P58"){
+Plat <- 6 }
+if (Plataforma == "PETROBRAS 48"){
+Plat <- 7 }
+if (Plataforma == "PETROBRAS 50"){
+Plat <- 8 }
+if (Plataforma == "PETROBRAS 51"){
+Plat <- 9 }
+if (Plataforma == "PETROBRAS 52"){
+Plat <- 10 }
+if (Plataforma == "PETROBRAS 53"){
+Plat <- 11 }
+if (Plataforma == "PETROBRAS 54"){
+Plat <- 12 }
+if (Plataforma == "PETROBRAS 55"){
+Plat <- 13 }
+if (Plataforma == "PETROBRAS 56"){
+Plat <- 14 }
+if (Plataforma == "PETROBRAS 62"){
+Plat <- 15 }
+if (Plataforma == "PETROBRAS XIX"){
+Plat <- 16 }
+if (Plataforma == "PETROBRAS XL"){
+Plat <- 17 }
+if (Plataforma == "PETROBRAS XLIII"){
+Plat <- 18 }
+if (Plataforma == "PETROBRAS XVIII"){
+Plat <- 19 }
+if (Plataforma == "PETROBRAS XX"){
+Plat <- 20 }
+if (Plataforma == "PETROBRAS XXV"){
+Plat <- 21 }
+if (Plataforma == "PETROBRAS XXXI"){
+Plat <- 22 }
+if (Plataforma == "Total"){
+Plat <- 23 }
+
+return(Plat)
+
+}
+```
+
+#Função de seleção plataforma ou total:
+```{r ts plataforma}
+Plat.Sel.Result = function(Plataforma){
+  
+if (Plataforma == "CDAN"){
+Plat <- "V1" }
+if (Plataforma == "CVIT"){
+Plat <- "V2" }
+if (Plataforma == "FPCGZ"){
+Plat <- "V3" }
+if (Plataforma == "FPNIT"){
+Plat <- "V4" }
+if (Plataforma == "FPSO-P57"){
+Plat <- "V5" }
+if (Plataforma == "FPSO-P58"){
+Plat <- "V6" }
+if (Plataforma == "PETROBRAS 48"){
+Plat <- "V7" }
+if (Plataforma == "PETROBRAS 50"){
+Plat <- "V8" }
+if (Plataforma == "PETROBRAS 51"){
+Plat <- "V9" }
+if (Plataforma == "PETROBRAS 52"){
+Plat <- "V10" }
+if (Plataforma == "PETROBRAS 53"){
+Plat <- "V11" }
+if (Plataforma == "PETROBRAS 54"){
+Plat <- "V12" }
+if (Plataforma == "PETROBRAS 55"){
+Plat <- "V13" }
+if (Plataforma == "PETROBRAS 56"){
+Plat <- "V14" }
+if (Plataforma == "PETROBRAS 62"){
+Plat <- "V15" }
+if (Plataforma == "PETROBRAS XIX"){
+Plat <- "V16" }
+if (Plataforma == "PETROBRAS XL"){
+Plat <- "V17" }
+if (Plataforma == "PETROBRAS XLIII"){
+Plat <- "V18" }
+if (Plataforma == "PETROBRAS XVIII"){
+Plat <- "V19" }
+if (Plataforma == "PETROBRAS XX"){
+Plat <- "V20" }
+if (Plataforma == "PETROBRAS XXV"){
+Plat <- "V21" }
+if (Plataforma == "PETROBRAS XXXI"){
+Plat <- "V22" }
+if (Plataforma == "Total"){
+Plat <- "Total" }
+
+return(Plat)
+
+}
+```
+
+
+#Realizados 2022: Dados para os testes
+```{r ts realizada 2022}
+
+##Producao
+
+
+k = length(datasetPot.UEP$UEP)
+UEPs = datasetPot.UEP$UEP
+ts_RealProd = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  ts_RealProd[,j] <- ts(filter(Real.Prod, UEP == UEPs[j])$Prod, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+ts_RealProd <- as.data.frame(ts_RealProd)
+
+#colnames(ts_RealProd) = c("P-53","P-57","P-40","P-52","P-58")
+
+ts_RealProd["Total"] = rowSums(ts_RealProd)
+
+ts.Prod22 = ts(ts_RealProd$Total, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+
+##Potencial
+
+ts_RealPot = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  ts_RealPot[,j] <- ts(filter(Real.Pot, UEP == UEPs[j])$Pot, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+ts_RealPot <- as.data.frame(ts_RealPot)
+
+#colnames(ts_RealPot) = c("P-53","P-57","P-40","P-52","P-58")
+
+ts_RealPot["Total"] = rowSums(ts_RealPot)
+
+
+
+##IEP
+
+ts_RealIEP = ts_RealNUMIEP = ts_RealDENIEP = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  ts_RealNUMIEP[,j] <- ts(filter(Real.IEP, UEP == UEPs[j])$Num, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+  ts_RealDENIEP[,j] <- ts(filter(Real.IEP, UEP == UEPs[j])$Den, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+  ts_RealIEP[,j] <- ts(filter(Real.IEP, UEP == UEPs[j])$IEP, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+ts_RealNUMIEP <- as.data.frame(ts_RealNUMIEP)
+ts_RealDENIEP <- as.data.frame(ts_RealDENIEP)
+ts_RealIEP <- as.data.frame(ts_RealIEP)
+
+#colnames(ts_RealNUMIEP) = c("P-53","P-57","P-40","P-52","P-58")
+#colnames(ts_RealDENIEP) = c("P-53","P-57","P-40","P-52","P-58")
+#colnames(ts_RealIEP) = c("P-53","P-57","P-40","P-52","P-58")
+
+ts_RealNUMIEP["TotalNum"] = rowSums(ts_RealNUMIEP)
+ts_RealDENIEP["TotalDen"] = rowSums(ts_RealDENIEP)
+
+ts_RealIEP["Total"] = ts_RealNUMIEP$TotalNum / ts_RealDENIEP$TotalDen
+
+ts.IEP22 = ts(ts_RealIEP$Total, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+
+```
+
+# 3) Pocos Novos e Paradas Programadas
+
+```{r Pocos e Paradas}
+
+
+Datas.Simuladas = Pocos.Sim(CurvaPocosNovos, Analisederisco, Nsim)
+Nova.Dt.Calculada.Simulada = transf.dt.sim(Datas.Simuladas,Nsim)
+Poco.Consolidado2 = cons.poco(CurvaPocosNovos)
+PocosSimulado.Agregado = Pocos.curva.Sim(Nova.Dt.Calculada.Simulada,Poco.Consolidado2, Datas.Simuladas,CurvaPocosNovos, Analisederisco.copy, Nsim)
+
+Paradas.Agreg.Sim = Paradas.Sim(ParadasProgramadas, datasetClusterParada, Nsim)
+
+```
+
+
+
+# 3.1) Paradas após Simulação - principais riscos - Plan vs Simulado
+```{r tabsets, echo=FALSE}
+graf.paradas.final <- function(Paradas_UEP,Paradas.Agreg.Sim) {
+
+  
+Paradas_UEP <- aggregate(Dur ~ UEP+DataInicio+Cluster, ParadasProgramadas, FUN = mean)
+Paradas_UEP$Dur <- Paradas_UEP$Dur+1
+Paradas_UEP$Duracao.Planejada <- Paradas_UEP$Dur
+
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-62"] <- "PETROBRAS 62"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-61"] <- "PETROBRAS 61"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-18"] <- "PETROBRAS XVIII"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-19"] <- "PETROBRAS XIX"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-20"] <- "PETROBRAS XX"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-25"] <- "PETROBRAS XXV"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-31"] <- "PETROBRAS XXXI"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-40"] <- "PETROBRAS XL"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-43"] <- "PETROBRAS XLIII"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-48"] <- "PETROBRAS 48"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-50"] <- "PETROBRAS 50"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-51"] <- "PETROBRAS 51"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-52"] <- "PETROBRAS 52"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-53"] <- "PETROBRAS 53"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-54"] <- "PETROBRAS 54"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-55"] <- "PETROBRAS 55"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-56"] <- "PETROBRAS 56"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-57"] <- "FPSO P-57"
+Paradas_UEP$UEP[Paradas_UEP$UEP == "P-58"] <- "FPSO P-58"
+
+datasetParadas$UEP[datasetParadas$UEP == "P-62"] <- "PETROBRAS 62"
+datasetParadas$UEP[datasetParadas$UEP == "P-61"] <- "PETROBRAS 61"
+datasetParadas$UEP[datasetParadas$UEP == "P-18"] <- "PETROBRAS XVIII"
+datasetParadas$UEP[datasetParadas$UEP == "P-19"] <- "PETROBRAS XIX"
+datasetParadas$UEP[datasetParadas$UEP == "P-20"] <- "PETROBRAS XX"
+datasetParadas$UEP[datasetParadas$UEP == "P-25"] <- "PETROBRAS XXV"
+datasetParadas$UEP[datasetParadas$UEP == "P-31"] <- "PETROBRAS XXXI"
+datasetParadas$UEP[datasetParadas$UEP == "P-40"] <- "PETROBRAS XL"
+datasetParadas$UEP[datasetParadas$UEP == "P-43"] <- "PETROBRAS XLIII"
+datasetParadas$UEP[datasetParadas$UEP == "P-48"] <- "PETROBRAS 48"
+datasetParadas$UEP[datasetParadas$UEP == "P-50"] <- "PETROBRAS 50"
+datasetParadas$UEP[datasetParadas$UEP == "P-51"] <- "PETROBRAS 51"
+datasetParadas$UEP[datasetParadas$UEP == "P-52"] <- "PETROBRAS 52"
+datasetParadas$UEP[datasetParadas$UEP == "P-53"] <- "PETROBRAS 53"
+datasetParadas$UEP[datasetParadas$UEP == "P-54"] <- "PETROBRAS 54"
+datasetParadas$UEP[datasetParadas$UEP == "P-55"] <- "PETROBRAS 55"
+datasetParadas$UEP[datasetParadas$UEP == "P-56"] <- "PETROBRAS 56"
+datasetParadas$UEP[datasetParadas$UEP == "P-57"] <- "FPSO P-57"
+datasetParadas$UEP[datasetParadas$UEP == "P-58"] <- "FPSO P-58"
+
+Paradas.graf <- left_join(Paradas.Agreg.Sim,Paradas_UEP, by=c("Plataforma"="UEP"))
+Paradas.graf <- left_join(Paradas.graf,datasetParadas, by=c("Plataforma"="UEP"))
+
+Paradas.graf$Duracao.Simulada <- Paradas.graf$DateDay
+Paradas.graf$Duracao.Realizada <- Paradas.graf$Duracao
+
+return(Paradas.graf)
+}
+
+```
+
+# 4) IEP
+# 4.1) Pré-processamento do IEP (Agrega o IEP com numerador e denominador) e add Paradas deterministicas
+
+```{r IEP PreProcess}
+
+#Add Paradas programadas na eficiência - obtém eficiencia probabilistica :
+datasetIEP.ajus = ajus.IEP(datasetIEP, paradas.tratadas)
+
+#Lista com UEPs:
+datasetIEP.UEP <- datasetPot.UEP
+
+```
+
+# 4.2) Organiza o Histórico IEP:
+```{r organiza historico IEP}
+
+#datasetIEP["IEP"] = datasetIEP$NumIEP/datasetIEP$DenIEP
+
+k = length(datasetIEP.UEP$UEP)
+
+datasetIEP.UEP$UEP_idx <- 1:nrow(datasetIEP.UEP)
+n = 60
+
+IEPTs = matrix(NA, ncol = k, nrow = n)
+
+for(j in 1:k){
+  IEPTs[,j] <- ts(filter(datasetIEP.ajus  %>% arrange(Date), UEP == datasetIEP.UEP[j,1])$IEP.ajuste,start = c(2017, 01), end = c(2021, 12), frequency = 12) 
+}
+ 
+IEPts <- as.data.frame((IEPTs))
+```
+
+4.3 Aplicacao das series temporais: 
+```{r Metodo Pot e IEP}
+tic()
+    prevPotARIMA = simular.ARIMA.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf.ARIMA = GRAF.ARIMA.Potencial(prevPotARIMA)
+
+    Metodo.Pot.ARIMA = TS.ARIMA.Potencial(Pot.graf.ARIMA) 
+
+    prevIEPARIMA = simular.ARIMA.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf.ARIMA = GRAF.ARIMA.IEP(prevIEPARIMA)
+    Metodo.IEP.ARIMA = TS.ARIMA.IEP(IEP.graf.ARIMA)
+      
+    #prevPotETS = simular.ETS.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    #prevPotTBATs = simular.TBATs.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    #prevPotELM = simular.ELM.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    #prevIEPETS = simular.ETS.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    #prevIEPTBATs = simular.TBATs.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    #prevIEPELM = simular.ELM.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    
+toc()
+```
+
+
+
+5) Agregação:
+```{r Agregacao function}
+agregar = function(Metodo.PotPocoParada, Metodo.IEP2){
+  
+Metodo.PotPocoParada$Curva.Ajustada[is.na(Metodo.PotPocoParada$Curva.Ajustada)] <- 0
+      
+      Metodo.PotPocoParada["Potencial"] = ifelse(is.na(Metodo.PotPocoParada$Curva.Ajustada),                                    Metodo.PotPocoParada$value,                                    Metodo.PotPocoParada$value+Metodo.PotPocoParada$Curva.Ajustada)
+      
+      Metodo.PotPocoParada["Perda"] = (Metodo.PotPocoParada$DateDay*Metodo.PotPocoParada$Potencial)/days_in_month(as.Date(Metodo.PotPocoParada$Date))
+        
+      Result = select(Metodo.PotPocoParada,c("Plataforma","UEP_idx","Date","Potencial","Perda","Curva.Ajustada","variable"))
+  #
+      
+      colnames(Result) <- c("Plataforma","UEP","Date","Potencial","PotencialParada","Poconovo","iter")
+
+
+      Result[is.na(Result)] <- 0
+      
+      Metodo.IEP2 = select(Metodo.IEP2,c("key","UEP.y","Date","value","valueNum","valueDen"))
+#
+      colnames(Metodo.IEP2) <- c("iter","Plataforma","Date","IEP","NumIEP","DenIEP")
+
+           
+      #Metodo.IEP2$Date <- as.Date(dmy(Metodo.IEP2$Date))
+
+      Resultado <- right_join(Metodo.IEP2,Result, by = c("iter" = "iter", "Date" = "Date", "Plataforma" = "Plataforma"))
+
+      Resultado["Producao"] = (Resultado$Potencial-Resultado$PotencialParada)*Resultado$IEP
+      
+      Resultado = Resultado[order(Resultado$iter, Resultado$Date, Resultado$UEP, decreasing=c(FALSE, FALSE, FALSE)), ]
+ 
+   return(Resultado)
+    }
+```
+
+
+
+#Função que mescla P10,P50 e P90 dos resultados:
+```{r merge cenarios} 
+MergeCen = function(Resultado.graf){
+
+    #ts producao P50
+tsProd.P50 = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  tsProd.P50[,j] <- ts(filter(Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+tsProd.P50 <- as.data.frame(tsProd.P50)
+
+tsProd.P50["Total"] = rowSums(tsProd.P50)
+
+  #ts producao P10
+tsProd.P10 = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  tsProd.P10[,j] <- ts(filter(Resultado.graf, Plataforma == UEPs[j] & rank == rank90)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+tsProd.P10 <- as.data.frame(tsProd.P10)
+
+tsProd.P10["Total"] = rowSums(tsProd.P10)
+
+  #ts producao P90
+tsProd.P90 = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  tsProd.P90[,j] <- ts(filter(Resultado.graf, Plataforma == UEPs[j] & rank == rank10)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+tsProd.P90 <- as.data.frame(tsProd.P90)
+
+tsProd.P90["Total"] = rowSums(tsProd.P90)
+  
+tsProd.P10.copy <- melt(tsProd.P10)
+tsProd.P50.copy <- melt(tsProd.P50)
+tsProd.P90.copy <- melt(tsProd.P90)
+tsProd.P10.copy["Cen"] <- "p10"
+tsProd.P50.copy["Cen"] <- "p50"
+tsProd.P90.copy["Cen"] <- "p90"
+dataset.Merge <-rbind(tsProd.P10.copy,tsProd.P50.copy,tsProd.P90.copy)
+
+dataset.Merge["Date"] = (format(as.Date(c('2022/01/01','2022/02/01','2022/03/01','2022/04/01','2022/05/01','2022/06/01','2022/07/01','2022/08/01','2022/09/01','2022/10/01','2022/11/01','2022/12/01'), origin ="2017-01-01"), "%d-%m-%Y"))
+
+    return(dataset.Merge)
+           
+}
+toc()
+```
+
+
+############################################
+
+To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
+
+## Inputs and Outputs
+
+ `renderPlot` `selectInput` and `sliderInput` functions create the input widgets used to drive the plot.
+
+
+```{r eruptions, echo=FALSE}
+
+#library(shinythemes)
+
+#############
+# UI
+#######
+# front end interface
+
+ui <-   
+
+dashboardPage(    
+
+  dashboardHeader(
+      title = "Simulador de Producao",
+      titleWidth = 250
+    ),
+  
+  dashboardSidebar(width=240,
+
+    sidebarMenu(
+    menuItem("Sobre o Aplicativo", tabName = "Metod", icon = icon("cog", lib = "glyphicon")),  
+    menuItem("Dados de entrada", tabName = "inputs", icon = icon("th")), 
+    menuItem("Simular Entidade", tabName = "Simulacao", icon = icon("sync")),
+    menuItem("Simular Produção", icon = icon("sync"), tabName = "Resultados", badgeLabel = "Resultado", badgeColor = "green"),
+    menuItem("Analise", tabName = "Analise", icon = icon("dashboard"), startExpanded = TRUE,
+          menuSubItem("Principais Riscos", tabName = "Influ"),
+          menuSubItem("Comparação com Meta", tabName = "Meta"),
+          menuSubItem("Comparação do Erro", tabName = "Comp")          
+          )
+  )
+
+
+  ), # dashboardSidebar
+        
+  dashboardBody(
+    tabItems(
+      # First tab content
+      tabItem(tabName = "Metod",
+                      fluidRow(
+                        #box(                    
+                          column(4, imageOutput('BR'),style = "height:50px"),
+                          column(3, offset = 5, imageOutput('PUC'),style = "height:50px")
+                    
+                        #, width = 12)
+                      ),
+        br(),
+        fluidRow(
+            box(h2("OBJETIVO"), background = "blue",style = "height:70px", width = 12)
+
+          ),
+          fluidRow(
+            box(h4("Elaborar modelagem capaz de inferir as incertezas associadas aos dados históricos de potencial de produção e eficiência operacional, e de projeções em poços novos e paradas para manutenção, fazendo uso de séries temporais e simulação para aumentar a acurácia das previsões de produção de óleo em plataformas marítimas da Bacia de Campos, e analisar os principais riscos relacionados."), width = 12)
+
+          ),
+        fluidRow(
+        column(width=2),
+        column(width=9,imageOutput('image')), #, width = 12
+        column(width=1)
+          )
+        ),
+      tabItem(tabName = "inputs",
+            fluidRow(
+            box(h4("ANÁLISE DOS DADOS DE ENTRADA POR ENTIDADE (2017 A 2021)"), background = "blue", width = 12)
+            ),
+             fluidRow(
+            tabBox(
+            title = "Entidades",
+            id = "tabset0", side = "left", height = "400px", width = "300px",
+            tabPanel("Potencial",
+              fluidRow(
+              box(
+              uiOutput("graf.pot.tot", height= 1200), width = 12
+              )    
+            ),
+            fluidRow(
+              box(
+               plotOutput("TKpot", height= 1500, width=1500), width = 12
+              )
+            )
+            ),
+            tabPanel("Eficiencia",
+              fluidRow(
+              box(
+              uiOutput("graf.IEP.tot", height= 200), width = 12
+              )
+            ),
+            plotOutput("IEPDado", height= 1500)
+                     ),
+            
+            tabPanel("Paradas", 
+            fluidRow(
+              box(
+              uiOutput("graf.par", height= 1000), width = 12
+              )
+            ),
+            fluidRow(
+              box(
+              uiOutput("graf.Cluster", height= 1000), width = 12
+              )
+            )
+                     ),
+            tabPanel("Poços Novos", 
+            fluidRow(
+              box(
+              uiOutput("graf.Poco.tot", height= 200), width = 12
+              )
+            ),
+            fluidRow(
+              box(
+               plotOutput("TKpoco", height= 600, width=1500), width = 12
+              )
+            )                     
+              )
+              ))),
+      tabItem(tabName = "Simulacao",
+      fluidRow(        
+      box(h4("ANÁLISE DAS SIMULAÇÕES - SERIES TEMPORAIS"), background = "blue", width = 12)),
+            fluidRow(
+            box(
+            column(5, selectInput("SELplat","Selecionar Plataforma", 
+            choices = list("Total",
+                            "CDAN",
+                            "CVIT",
+                            "FPCGZ",
+                            "FPNIT",
+                            "FPSO-P57",
+                            "FPSO-P58",
+                            "PETROBRAS 48",
+                            "PETROBRAS 50",
+                            "PETROBRAS 51",
+                            "PETROBRAS 52",
+                            "PETROBRAS 53",
+                            "PETROBRAS 54",
+                            "PETROBRAS 55",
+                            "PETROBRAS 56",
+                            "PETROBRAS 62",
+                            "PETROBRAS XIX",
+                            "PETROBRAS XL",
+                            "PETROBRAS XLIII",
+                            "PETROBRAS XVIII",
+                            "PETROBRAS XX",
+                            "PETROBRAS XXV",
+                            "PETROBRAS XXXI"
+                                                    ), width=200)),
+        column(3, offset = 4, actionButton("calc", "Simular Entidade", icon("random"), class = "btn-warning", style='padding:10px; font-size:150%'))
+ 
+          , background = "blue", width = 12)),
+           conditionalPanel(condition="$('html').hasClass('shiny-busy')",
+                            tags$div("Loading...",id="loadmessage")
+         ),
+            fluidRow(
+            tabBox(
+            title = "Series Temporais",
+            id = "tabset1", side = "right", height = "400px", width = "300px",
+            tabPanel("Potencial", 
+              fluidRow(
+              box(    
+                    column(4, radioButtons("SELseriePOT","Qual Método utilizar?", 
+                                     choices = list("ARIMA",
+                                                    "ETS",
+                                                    "TBATs",
+                                                    "ELM"
+                                                    ))),
+                    column(width = 4, shinydashboard::valueBoxOutput("Time.Calc", width=8)),
+                    column(width = 4, shinydashboard::valueBoxOutput("ErroBoxPot",width=8))                    ,width = 12)), #box e fluidRow
+                    br(),
+               fluidRow(
+               column(width = 3),
+               column(width = 9),
+               plotOutput("TSpot", height = 600, width=1500) # , height= 400, width=700
+               ),
+             fluidRow(
+ #DT::dataTableOutput("Resultado.graf3")
+       ) 
+                    #br(),
+ 
+            ),
+ 
+            tabPanel("Eficiência", 
+                     
+            column(4,side = "left", radioButtons("SELserieIEP","Qual Método utilizar?", 
+                                     choices = list("ARIMA",
+                                                    "ETS",
+                                                    "TBATs",
+                                                    "ELM"
+                                                    ))),
+
+          column(width = 4,  shinydashboard::valueBoxOutput("Time.Calc2", width=8)),                     
+                    column(width = 4, shinydashboard::valueBoxOutput("ErroBoxIEP", width=8)),
+                    br(),
+              fluidRow(
+               column(width = 2),
+               column(width = 10,
+
+                plotOutput("TSIEP", height = 600, width=1500) 
+                )
+               )
+                    )#tabpanel
+
+                     ) #tabbox
+          )          #fluuidrow              
+                     ), #tabitem
+
+      # Second tab content
+      tabItem(tabName = "Resultados",
+            fluidRow(        
+      box(h4("ANÁLISE DA PRODUÇÃO COM OS PARÂMETROS ESCOLHIDOS"), background = "blue", width = 12)),
+            fluidRow(
+            box(
+            column(5, selectInput("SELplat2","Selecionar Plataforma", 
+            choices = list("Total",
+                            "CDAN",
+                            "CVIT",
+                            "FPCGZ",
+                            "FPNIT",
+                            "FPSO-P57",
+                            "FPSO-P58",
+                            "PETROBRAS 48",
+                            "PETROBRAS 50",
+                            "PETROBRAS 51",
+                            "PETROBRAS 52",
+                            "PETROBRAS 53",
+                            "PETROBRAS 54",
+                            "PETROBRAS 55",
+                            "PETROBRAS 56",
+                            "PETROBRAS 62",
+                            "PETROBRAS XIX",
+                            "PETROBRAS XL",
+                            "PETROBRAS XLIII",
+                            "PETROBRAS XVIII",
+                            "PETROBRAS XX",
+                            "PETROBRAS XXV",
+                            "PETROBRAS XXXI"
+                                                    ), width=200)), #height= 100,
+           column(4,sliderInput("n_sim", "Número de Iterações:", min = 0, max = 1000, value = 10, step = 5)),
+           column(3, actionButton("Simular", "Simular Produção", icon("random"), class = "btn-warning", style='padding:10px; font-size:150%'))
+          , background = "blue", width = 12)),
+           conditionalPanel(condition="$('html').hasClass('shiny-busy')",
+                            tags$div("Loading...",id="loadmessage")
+         ),
+            #fluidRow(
+ 
+            #),
+            fluidRow(
+              
+                                       column(3, radioButtons("SELseriePOT2","Qual Método utilizar para Potencial?", 
+                                     choices = list("ARIMA",
+                                                    "ETS",
+                                                    "TBATs",
+                                                    "ELM"
+                                                    ))),
+        #fluidRow(
+            column(3,side = "left", radioButtons("SELserieIEP2","Qual Método utilizar para Eficiência?", 
+                                     choices = list("ARIMA",
+                                                    "ETS",
+                                                    "TBATs",
+                                                    "ELM"
+                                                    ))), #)
+              column(3, shinydashboard::valueBoxOutput("Time.Sim", width=8)),
+              column(3,side = "right", shinydashboard::valueBoxOutput("ErroBoxProd", width=8))
+#column(width = 3,side = "left", shinydashboard::valueBoxOutput("ErroBoxIEP2", width=10)),   #column(width = 3,side = "left", shinydashboard::valueBoxOutput("ErroBoxPot2", width=10)),            
+            ),#fluidrow
+
+            fluidRow(
+      column(width = 12, plotOutput("Prodoutput" , height= 600, width=1500) )
+            ),#fluidrow,
+br(),
+            fluidRow(
+      column(width = 12, plotOutput("ProdCen" , height= 400, width=1500) )
+            ),#fluidrow,
+                    br(),
+               fluidRow(
+               #column(width = 4, shinydashboard::valueBoxOutput("Time.Sim", width=10)),
+               #column(width = 8) 
+               )
+
+      ),#tabitem
+      # tab Analise: 
+      tabItem(tabName = "Comp",
+            fluidRow(        
+      box(h4("ANÁLISE COMPARATIVA ENTRE OS MÉTODOS"), background = "blue", width = 12)),
+            fluidRow(
+            #sliderInput("n_sim", "Numero de Simulacoes:", min = 0, max = 100, value = 10, step = 5)  
+            ),
+            fluidRow(
+            box(
+            column(4, selectInput("SELplat3","Selecionar Plataforma", 
+            choices = list("Total",
+    "CDAN",
+    "CVIT",
+    "FPCGZ",
+    "FPNIT",
+    "FPSO-P57",
+    "FPSO-P58",
+    "PETROBRAS 48",
+    "PETROBRAS 50",
+    "PETROBRAS 51",
+    "PETROBRAS 52",
+    "PETROBRAS 53",
+    "PETROBRAS 54",
+    "PETROBRAS 55",
+    "PETROBRAS 56",
+    "PETROBRAS 62",
+    "PETROBRAS XIX",
+    "PETROBRAS XL",
+    "PETROBRAS XLIII",
+    "PETROBRAS XVIII",
+    "PETROBRAS XX",
+    "PETROBRAS XXV",
+    "PETROBRAS XXXI"
+                                                    ), width=200)),
+            column(5,sliderInput("n_sim", "Número de Iterações:", min = 0, max = 1000, value = 10, step = 5)),
+            column(3, actionButton("Comparar", "Comparar Métodos", icon("random"), class = "btn-warning", style='padding:10px; font-size:150%'))
+          , background = "blue", width = 12)), #FLUID
+           conditionalPanel(condition="$('html').hasClass('shiny-busy')",
+                            tags$div("Loading...",id="loadmessage")
+         ),
+#            fluidRow(   
+#plotOutput("ProdComparacao" , height= 300, width=1500) ),
+#            fluidRow(   
+#plotOutput("IEPComparacao" , height= 300, width=1500) ),
+#            fluidRow(   
+#plotOutput("PotComparacao" , height= 300, width=1500) ),
+#                fluidRow(
+# DT::dataTableOutput("result.simulador")
+#       ),#FLUID
+            fluidRow(
+              box(
+              plotOutput("graf.erro", height= 600), width = 12
+              )
+            )
+      ), #tabitem
+      tabItem(tabName = "Influ",
+            fluidRow(
+            box(h4("ANÁLISE DOS DADOS DE SAÍDA - MAIORES RISCOS EM ENTIDADES PLANEJADAS SEM SER COM BASE NO HISTÓRICO"), background = "blue", width = 12)
+            ),
+            fluidRow(
+            tabBox(
+            title = "Entidades",
+            id = "tabset0", side = "left", height = "400px", width = "300px",
+            
+            #tabPanel("Potencial",
+            #  fluidRow(
+            #  box(
+
+            #  )
+            #)
+            #),
+            
+            #tabPanel("Eficiencia", 
+            #
+            #         ),
+            
+            tabPanel("Paradas", 
+            fluidRow(
+              box(
+              uiOutput("Paradas.pos.Sim", height= 1000), width = 12
+               )
+            )
+                     ),
+
+            tabPanel("Poços Novos", 
+            fluidRow(
+              box(
+              uiOutput("Pocos.pos.Sim", height= 1000), width = 12
+              )
+            )                     
+              )
+              ) #tabbox
+            ) #fluid
+      ), #tabitem
+      tabItem(tabName = "Meta",
+            fluidRow(
+            box(h4("ANÁLISE DA META DETERMINISTICA EM RELAÇÃO A SIMULAÇÃO"), background = "blue", width = 12)
+            ),
+            fluidRow(
+            box(column(5,sliderInput("n_meta", "Meta (Mbpd):", min = 0, max = 800, value = 559, step = 1)),
+            column(3,  offset=4, actionButton("SimularMeta", "Simular Produção", icon("random"), class = "btn-warning", align = "center", style='padding:10px; font-size:150%'))
+          , background = "blue", width = 12),
+           conditionalPanel(condition="$('html').hasClass('shiny-busy')",
+                            tags$div("Loading...",id="loadmessage")
+         )
+                                        ),#fluid
+            fluidRow(
+              box(
+              uiOutput("prod.meta.sim", height= 1500), width = 12
+              )
+            ),
+
+
+      ) #tabitem
+    ), #tabitems
+  ) #body
+) # page 
+       
+  
+server <- function(input, output) {
+
+      output$PUC <- renderImage({
+setwd("C:/Users/hru9/OneDrive - PETROBRAS/Documents/R/RiscoSimProd")
+      list(src = "PUC.png", height=60, width=230, alt = "Alternate text")
+    
+  }, deleteFile = FALSE)
+
+          output$BR <- renderImage({
+setwd("C:/Users/hru9/OneDrive - PETROBRAS/Documents/R/RiscoSimProd")
+      list(src = "BR.png", height=60, width=230, alt = "Alternate text")
+    
+  }, deleteFile = FALSE)
+          
+    output$image <- renderImage({
+setwd("C:/Users/hru9/OneDrive - PETROBRAS/Documents/R/RiscoSimProd")
+      list(src = "Metodologia.png", height=625, width=1115, alt = "Alternate text")
+    
+  }, deleteFile = FALSE)
+
+
+#Dados Paradas:
+    
+datasetParadas.agg <- aggregate(cbind(VolumeParadas,Duracao)~ UEP+Cluster,datasetParadas,mean)
+
+datasetParadas.agg["PerdaMediaDiaria"] = datasetParadas.agg$VolumeParadas / datasetParadas.agg$Duracao
+
+Par.Dados <- ggplotly(ggplot(datasetParadas.agg,aes(x=UEP,y=PerdaMediaDiaria,fill=Cluster))+
+geom_bar(position = "dodge",stat = "identity")+ 
+geom_line(aes(x=UEP,y=Duracao, group = 1),inherit.aes = FALSE) +ggtitle("Paradas - Total histórico de Perda (barra) e Duração (linha) por Plataforma") +scale_y_continuous(sec.axis = sec_axis(~.*100, name = "Perda"))+ylab("Perda"))
+    
+  output$graf.par <- renderUI({ Par.Dados })
+
+  
+Cluster.Dados <- ggplotly(ggplot(datasetClusterParada,aes(x=Value.fit.cluster,y=Dur.Med.Real,fill=Value.fit.cluster))+
+geom_bar(position = "dodge",stat = "identity")+ 
+geom_line(aes(x=Value.fit.cluster,y=Dur.Med.Plan, group = 1),inherit.aes = FALSE) +ggtitle("Planejado (linha) vs Realizado (barra) por Cluster") +scale_y_continuous(sec.axis = sec_axis(~.*100, name = "Dur Plan"))+ylab("Duração"))
+
+  output$graf.Cluster <- renderUI({ Cluster.Dados })
+  
+#Dados IEP:
+
+options(repr.plot.width=14,repr.plot.height=6)
+Grafico.IEP.Geral <- ggplotly(autoplot(IEP.Historico)+ylab("")+ggtitle("IEP Histórico - Bacia geográfica de Campos"))
+
+  output$graf.IEP.tot <- renderUI({ Grafico.IEP.Geral })
+  
+
+tibble_IEP <- as_tibble(datasetIEP.ajus)
+
+
+IEP.Dados.UEP <-  tibble_IEP %>% group_by(UEP) %>%
+  plot_time_series(Date, IEP.ajuste,
+ # .color_var = month(Date, label = TRUE), 
+                   .facet_ncol = 4, .facet_scales = "free",
+                   .interactive = FALSE,
+                   .plotly_slider = FALSE,
+                   # Customization
+                   .title = "Histórico das eficiência por Plataforma",
+                   .x_lab = "Date",
+                   .y_lab = "IEP",
+                   #.color_lab = "Month"
+ ) +
+  scale_y_continuous(labels = scales::comma_format())
+  #ggplot(datasetIEP.ajus, aes(x=IEP.ajuste, y=UEP, fill=UEP)) + geom_violin(trim = FALSE) + geom_boxplot(width = 0.2) +  stat_summary(    fun.data = "mean_sdl",  fun.args = list(mult = 1),    geom = "pointrange", color = "black") + theme(legend.position = "none")
+
+  output$IEPDado <- renderPlot({ IEP.Dados.UEP })
+
+# Dados POCOS nOVOS:
+datasetPocosEntraram.agg <- aggregate(cbind(ValorPocos)~ Date,datasetPocosEntraram,sum)
+
+Graf.Poco.tot <- ggplotly(ggplot(data = datasetPocosEntraram.agg, aes(x = Date, y = ValorPocos, group = 1)) + geom_line() + ggtitle("Poços Novos Histórico - Bacia Geográfica de Campos")+ylab("Potencial (BPD)"))#+  facet_wrap(facets = vars(UEP))
+
+  output$graf.Poco.tot <- renderUI({ Graf.Poco.tot })
+
+
+tibble_poco <- as_tibble(datasetPocosEntraram)
+
+    dPOCO <- tibble_poco %>% group_by(UEP) %>%
+  plot_time_series(Date, ValorPocos,
+ # .color_var = month(Date, label = TRUE), 
+                   .facet_ncol = 4, .facet_scales = "free",
+                   .interactive = FALSE,
+                   .plotly_slider = FALSE,
+                   # Customization
+                   .title = "Histórico dos Poços Novos por Plataforma",
+                   .x_lab = "Date",
+                   .y_lab = "Potencial (BPD)",
+                   #.color_lab = "Month"
+ ) +
+  scale_y_continuous(labels = scales::comma_format())
+    output$TKpoco  <- renderPlot({ dPOCO }) 
+    
+# Dados POTENCIAL:
+    #Pot Geral:
+options(repr.plot.width=14,repr.plot.height=6)
+Grafico.Pot.Geral <- ggplotly(autoplot(Potencial.sem.desinvestimentos) + autolayer(Potencial.Pleno) + autolayer(Potencial.sem.desinvestimentos.sem.outliers) + autolayer(Potencial.Implantado)+ylab("")+ggtitle("Potencial Histórico - Bacia geográfica de Campos"))
+
+  output$graf.pot.tot <- renderUI({ Grafico.Pot.Geral })
+  
+   #Pot por UEP
+    tibble_pot <- as_tibble(pot.sem.pocos)
+    dPOT <-  tibble_pot %>% group_by(UEP) %>%
+  plot_time_series(Date, Potencial,
+                   .facet_ncol = 4, .facet_scales = "free",
+                   .interactive = FALSE,
+                   .plotly_slider = TRUE,
+                   # Customization
+                   .title = "Potencial",
+                   .x_lab = "Date",
+                   .y_lab = "Potencial (BPD)") +
+  scale_y_continuous(labels = scales::comma_format())
+      #tibble_pot %>% group_by(UEP) %>% plot_anomaly_diagnostics(Date, Potencial, .facet_ncol = 3, .interactive = FALSE) 
+    output$TKpot  <- renderPlot({ dPOT })
+    
+    
+       
+  observeEvent(input$calc, {
+
+      if(input$tabset1=="Potencial"){
+tic()      
+      ### Potencial:
+
+    if (input$SELseriePOT == "ARIMA")  ip=1 
+    if (input$SELseriePOT == "ETS")  ip=2
+    if (input$SELseriePOT == "TBATs")  ip=3
+    if (input$SELseriePOT == "ELM")  ip=4
+
+  
+  if (ip ==1) {
+    Pot.graf = Pot.graf.ARIMA
+    Metodo.P50.Pot = Metodo.Pot.ARIMA
+  }
+  if (ip ==2) {
+    prevPotETS = simular.ETS.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf = GRAF.ETS.Potencial(prevPotETS)
+    Metodo.P50.Pot = TS.ETS.Potencial(Pot.graf) 
+
+  }
+  if (ip ==3) {
+    prevPotTBATs = simular.TBATs.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf = GRAF.TBATs.Potencial(prevPotTBATs)
+    Metodo.P50.Pot = TS.TBATs.Potencial(Pot.graf)    
+      }
+  if (ip ==4) {
+    prevPotELM = simular.ELM.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf = GRAF.ELM.Potencial(prevPotELM)
+    Metodo.P50.Pot = TS.ELM.Potencial(Pot.graf) 
+  }
+
+    Plat = Plat.Sel(input$SELplat)
+    
+    if (Plat==23) {
+    Pot.graf = aggregate(value ~ rank+Date+key, Pot.graf, sum)
+  }
+    tsPot = ts(Metodo.P50.Pot[,Plat], start = c(2022, 01), end = c(2022, 12), frequency = 12)
+    Potencial.Realizado = ts(ts_RealPot[,Plat], start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+
+    Pot.erro = forecast::accuracy(Potencial.Realizado, tsPot)[5]
+
+
+
+     output$TSpot  <- renderPlot({ Sys.sleep(2);plot(tsPot, type = "l", main = paste0( "Simulação do Potencial - ",input$SELplat), ylab = "Potencial (Mbpd)", ylim = range(0,tsPot+5000))+if (Plat==23) { for (i in 1:Nsim) {
+lines(ts(filter(Pot.graf%>% arrange(Date), key == paste0("V",i))$value  ,start = c(2022, 01), end = c(2022, 12), frequency = 12), col = "grey")+lines(tsPot,         col = "navyblue", type = "l",    lwd = 3)+lines(Potencial.Realizado,         col = "orange", type = "l",    lwd = 2)#
+  }}
+       if (Plat<23) {
+         for (i in 1:Nsim) {
+  lines(ts(filter(Pot.graf%>% arrange(Date), UEP.y == datasetPot.UEP[Plat,1] & key == paste0("V",i))$value  ,start = c(2022, 01), end = c(2022, 12), frequency = 12), col = "grey")+lines(tsPot,         col = "navyblue", type = "l",    lwd = 3)+lines(Potencial.Realizado,         col = "orange", type = "l",    lwd = 2)#+legend("bottomright",legend = c("P50", "Realizado", "Iterações"),col = c("navyblue", "orange", "grey"),lty = 2)
+           }} 
+}) 
+            
+      #Pprev <<- "ETS Auto"
+    ERRO = Pot.erro
+   
+    texto1 = round(ERRO,2)
+  #})
+
+    output$ErroBoxPot <- renderValueBox({
+    valueBox(
+      paste0(texto1, "%"), paste0("MAPE Pot", input$SELseriePot), icon = icon("check"),
+      color = "purple"
+    )
+    })
+
+time <- toc()
+Tempo = time$toc - time$tic 
+Tempo = round(Tempo,1) %>% as.numeric() 
+
+    output$Time.Calc <- renderValueBox({
+    valueBox(paste0(Tempo, " Seg."), paste0("Tempo"), icon = icon("clock"),
+      color = "light-blue" #
+    )
+    })
+    
+#})#if event Pot 
+}#if tab pOT
+
+#})#if Calc Pot    
+
+      if(input$tabset1=="Eficiência"){
+tic()
+#eventReactive(input$SELserieIEP2, {
+      
+    if (input$SELserieIEP == "ARIMA") ie=1 
+    if (input$SELserieIEP == "ETS")  ie=2
+    if (input$SELserieIEP == "TBATs")  ie=3
+    if (input$SELserieIEP == "ELM")  ie=4
+
+  
+  if (ie ==1) {
+    IEP.graf = IEP.graf.ARIMA
+    Metodo.P50.IEP = Metodo.IEP.ARIMA
+  }
+  if (ie ==2) {
+    prevIEPETS = simular.ETS.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf = GRAF.ETS.IEP(prevIEPETS)
+    Metodo.P50.IEP = TS.ETS.IEP(IEP.graf.ETS)
+  }
+  if (ie ==3) {
+    prevIEPTBATs = simular.TBATs.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf = GRAF.TBATs.IEP(prevIEPTBATs)
+    Metodo.P50.IEP = TS.TBATs.IEP(IEP.graf.TBATs) 
+  }
+  if (ie ==4) {
+    prevIEPELM = simular.ELM.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf = GRAF.ELM.IEP(prevIEPELM)
+    Metodo.P50.IEP = TS.ELM.IEP(IEP.graf.ELM)
+  }
+
+    Plat = Plat.Sel(input$SELplat)
+    
+    if (Plat==23) {
+    IEP.graf = aggregate(cbind(valueNum,valueDen) ~ rank+Date+key, IEP.graf, sum)
+    IEP.graf["value"] = IEP.graf$valueNum/IEP.graf$valueDen
+  }
+    tsIEP = ts(Metodo.P50.IEP[,Plat], start = c(2022, 01), end = c(2022, 12), frequency = 12)
+    Eficiencia.Realizada = ts(ts_RealIEP[,Plat], start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+    IEP.erro = forecast::accuracy(Eficiencia.Realizada, tsIEP)[5]
+
+            output$TSIEP  <- renderPlot({ plot(tsIEP, type = "l", main = paste0( "Simulação do IEP - ",input$SELplat), ylab = "IEP", ylim = range(0,1))+if (Plat==23) { for (i in 1:Nsim) {
+lines(ts(filter(IEP.graf%>% arrange(Date), key == paste0("V",i))$value  ,start = c(2022, 01), end = c(2022, 12), frequency = 12), col = "grey")+lines(tsIEP,         col = "navyblue", type = "l",    lwd = 3)+lines(Eficiencia.Realizada,         col = "orange", type = "l",    lwd = 2)#+legend("bottomright",legend = c("P50", "Realizado", "Iterações"),col = c("navyblue", "orange", "grey"),lty = 2)
+  }}
+       if (Plat<23) {
+         for (i in 1:Nsim) {
+  lines(ts(filter(IEP.graf%>% arrange(Date), UEP.y == datasetIEP.UEP[Plat,1] & key == paste0("V",i))$value  ,start = c(2022, 01), end = c(2022, 12), frequency = 12), col = "grey")+lines(tsIEP,         col = "navyblue", type = "l",    lwd = 3)+lines(Eficiencia.Realizada,         col = "orange", type = "l",    lwd = 2)#+legend("bottomright",legend = c("P50", "Realizado", "Iterações"),col = c("navyblue", "orange", "grey"),lty = 2)
+           }} 
+}) 
+ 
+
+    ERRO.IEP = IEP.erro
+        
+    texto2 = round(ERRO.IEP,2)
+ 
+    output$ErroBoxIEP <- renderValueBox({
+    valueBox(
+      paste0(texto2, "%"), paste0("MAPE IEP", input$SELserieIEP), icon = icon("thumbs-up"),
+      color = "purple"
+    )
+        
+  })   
+
+time2 <- toc()
+Tempo2 = time2$toc - time2$tic 
+Tempo2 = round(Tempo2,1) %>% as.numeric() 
+
+    output$Time.Calc2 <- renderValueBox({
+    valueBox(paste0(Tempo2, " Seg."), paste0("Tempo"), icon = icon("clock"),
+      color = "light-blue" #
+    )
+    })
+    
+
+  }#if tab IEP    
+})#Calc
+
+  
+observeEvent(input$Simular, {
+tic()      
+ #eventReactive(input$SELseriePOT2, {
+    if (input$SELseriePOT2 == "ARIMA") ip2=1 
+    if (input$SELseriePOT2 == "ETS")  ip2=2
+    if (input$SELseriePOT2 == "TBATs")  ip2=3
+    if (input$SELseriePOT2 == "ELM")  ip2=4
+
+  # Number of simulations
+  Nsim = input$n_sim
+  
+  if (ip2 ==1) {
+    Metodo.Pot2 = simular.ARIMA.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf = Pot.graf.ARIMA
+    Metodo.P50.Pot = Metodo.Pot.ARIMA
+  }
+  if (ip2 ==2) {
+    Metodo.Pot2 = simular.ETS.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf = GRAF.ETS.Potencial(Metodo.Pot2)
+    Metodo.P50.Pot = TS.ETS.Potencial(Pot.graf) 
+  }
+  if (ip2 ==3) {
+    Metodo.Pot2 = simular.TBATs.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf = GRAF.TBATs.Potencial(Metodo.Pot2)
+    Metodo.P50.Pot = TS.TBATs.Potencial(Pot.graf) 
+  }
+  if (ip2 ==4) {
+    Metodo.Pot2 = simular.ELM.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf = GRAF.ELM.Potencial(Metodo.Pot2)
+    Metodo.P50.Pot = TS.ELM.Potencial(Pot.graf) 
+  }
+  
+  
+  
+ #eventReactive(input$SELserieIEP2, {
+    if (input$SELserieIEP2 == "ARIMA") ie2=1 
+    if (input$SELserieIEP2 == "ETS")  ie2=2
+    if (input$SELserieIEP2 == "TBATs")  ie2=3
+    if (input$SELserieIEP2 == "ELM")  ie2=4
+
+  
+  if (ie2 ==1) {
+    Metodo.IEP2 = simular.ARIMA.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf = IEP.graf.ARIMA
+    Metodo.P50.IEP = Metodo.IEP.ARIMA
+  }
+  if (ie2 ==2) {
+    Metodo.IEP2 = simular.ETS.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf = GRAF.ETS.Potencial(Metodo.IEP2)
+    Metodo.P50.IEP = TS.ETS.Potencial(IEP.graf)
+  }
+  if (ie2 ==3) {
+    Metodo.IEP2 = simular.TBATs.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf = GRAF.TBATs.Potencial(Metodo.IEP2)
+    Metodo.P50.IEP = TS.TBATs.Potencial(IEP.graf)
+  }
+  if (ie2 ==4) {
+    Metodo.IEP2 = simular.ELM.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf = GRAF.ELM.Potencial(Metodo.IEP2)
+    Metodo.P50.IEP = TS.ELM.Potencial(IEP.graf)
+  }
+    
+#})     
+  
+Datas.Simuladas = Pocos.Sim(CurvaPocosNovos, Analisederisco, Nsim)
+Nova.Dt.Calculada.Simulada = transf.dt.sim(Datas.Simuladas,Nsim)
+Poco.Consolidado2 = cons.poco(CurvaPocosNovos)
+PocosSimulado.Agregado = Pocos.curva.Sim(Nova.Dt.Calculada.Simulada,Poco.Consolidado2, Datas.Simuladas,CurvaPocosNovos, Analisederisco.copy, Nsim)
+
+
+Paradas.Agreg.Sim = Paradas.Sim(ParadasProgramadas, datasetClusterParada, Nsim)
+    
+          ##Agrega Poco Novo:
+          Metodo.PotPoco <- right_join(PocosSimulado.Agregado,Metodo.Pot2, by = c("variable" = "key", "Date" = "Date", "Plataforma" = "UEP.y"))
+          
+          ##Agrega Parada
+          Metodo.PotPocoParada <- right_join(Paradas.Agreg.Sim,Metodo.PotPoco, by = c("variable" = "variable", "Date" = "Date", "Plataforma" = "Plataforma"))
+
+          Metodo.PotPocoParada <- inner_join(Metodo.PotPocoParada,datasetPot.UEP, by = c("Plataforma" = "UEP"))     
+          
+    Resultado.ajus = agregar(Metodo.PotPocoParada, Metodo.IEP2)
+         
+ Producao.Iter = aggregate(Producao ~ iter, Resultado.ajus, sum)
+  Producao.Iter = Producao.Iter %>% mutate(rank = rank(Producao)) %>% select(-Producao) #%>% group_by(UEP) 
+  
+  Resultado.graf = inner_join(Producao.Iter,Resultado.ajus, by = c("iter" = "iter"))
+
+  dataset.Merge =  MergeCen(Resultado.graf) 
+
+Plat2 = Plat.Sel.Result(input$SELplat2) #input$SELplat2
+Plat3 = Plat.Sel(input$SELplat2)
+
+dataset.Merge2 <- filter(dataset.Merge, variable==Plat2) #input$SELplat2
+
+
+#Serie Temporal final:
+  
+    #ts producao P50
+tsProd.P50 = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  tsProd.P50[,j] <- ts(filter(Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+tsProd.P50 <- as.data.frame(tsProd.P50)
+
+tsProd.P50["Total"] = rowSums(tsProd.P50)  
+  
+#Resultado.2 = aggregate(Producao ~ iter+rank+Date, Resultado.graf, sum)
+    
+Producao.P50 <- ts(tsProd.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+
+
+  if (Plat3==23) {
+  Resultado.graf2 = aggregate(Producao ~ rank+Date+iter, Resultado.graf, sum)
+  }
+
+  if (Plat3<23) {
+   Resultado.graf2 <- filter(Resultado.graf, Plataforma==Plat3) 
+   
+  }
+
+#Prod realizada
+ts.Prod22 <- ts(ts_RealProd[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+
+output$Prodoutput <- renderPlot({ plot(Producao.P50, type = "l", main = paste0( "Simulação da Produção - ",input$SELplat), ylab = "Producao", ylim = range(0,Producao.P50+5000))+if (Plat3==23) { for (i in 1:Nsim) {
+lines(ts(filter(Resultado.graf2%>% arrange(Date), iter == paste0("V",i))$Producao  ,start = c(2022, 01), end = c(2022, 12), frequency = 12), col = "grey")+lines(Producao.P50,         col = "navyblue", type = "l",    lwd = 3)+lines(ts.Prod22,         col = "orange", type = "l",    lwd = 2)#+legend("bottomright",legend = c("P50", "Realizado", "Iterações"),col = c("navyblue", "orange", "grey"),lty = 2)
+  }}
+       if (Plat3<23) {
+         for (i in 1:Nsim) {
+  lines(ts(filter(Resultado.graf2%>% arrange(Date), Plataforma == datasetIEP.UEP[Plat3,1] & iter == paste0("V",i))$Producao  ,start = c(2022, 01), end = c(2022, 12), frequency = 12), col = "grey")+lines(Producao.P50,         col = "navyblue", type = "l",    lwd = 3)+lines(ts.Prod22,         col = "orange", type = "l",    lwd = 2)#+legend("bottomright",legend = c("P50", "Realizado", "Iterações"),col = c("navyblue", "orange", "grey"),lty = 2)
+           }} 
+}) 
+    
+mu <- ddply(dataset.Merge2, "Cen", summarise, grp.mean=mean(value))
+
+# Cenarios P10,P50 e P90
+p.merge <- ggplot(dataset.Merge2, aes(x=value, group=Cen, fill=Cen)) +
+    geom_density(adjust=1.5, alpha=.4) +
+    theme_ipsum() +
+    facet_wrap(~variable) +
+    theme(
+      legend.position="bottom",
+      panel.spacing = unit(0.1, "lines"),
+      axis.ticks.x=element_blank()
+    )#+geom_vline(data=mu, aes(xintercept=grp.mean, color=Cen),linetype="dashed")
+
+  output$ProdCen <- renderPlot({ p.merge })
+
+    Prod.erro = forecast::accuracy(ts.Prod22,Producao.P50)[5]
+
+    Prod.erro = round(Prod.erro,2)
+
+	    output$ErroBoxProd <- renderValueBox({
+	    valueBox(
+	      paste0(Prod.erro, "%"), paste0("MAPE Prod"), icon = icon("thumbs-up"),
+	      color = "blue"
+	    )
+    })
+
+	    #Principais riscos:
+	    
+	    ### Paradas:
+	    
+	      Paradas.graf = graf.paradas.final(Paradas_UEP,Paradas.Agreg.Sim)
+
+        Paradas.posSim  <-  ggplotly(ggplot(Paradas.graf, aes(x = Plataforma, y = Duracao.Simulada, fill = Cluster.x)) +
+         geom_violin() + geom_point(aes(x = Plataforma, y = Duracao.Planejada), alpha = 0.4, color = 'green'))
+       
+         output$Paradas.pos.Sim <- renderUI({ Paradas.posSim }) 
+          
+          	    ### Pocos:
+	    
+ 
+      #Poços:
+Poco.Teste <- aggregate(Curva ~ Poco + Dt.Entrada, data=CurvaPocosNovos,FUN=mean)
+Poco.Teste<- Poco.Teste %>% arrange(Poco)
+  Analisederisco["Dt.Deterministica"] <- Poco.Teste$Dt.Entrada
+
+risco.poco <- select(Analisederisco, c("Poço","Dt.Deterministica","Mais.Provavel","Otimista","Conservador"))
+
+risco.poco$Dt.Provavel <- format(as.Date(ymd(risco.poco[,2]))+ days(risco.poco[,3]), format="%d-%m-%Y")
+risco.poco$Dt.Otimista <- format(as.Date(ymd(risco.poco[,2]))+ days(risco.poco[,4]), format="%d-%m-%Y")
+risco.poco$Dt.Conservador <- format(as.Date(ymd(risco.poco[,2]))+ days(risco.poco[,5]), format="%d-%m-%Y")
+risco.poco$Dt.Deterministica <- format(as.Date(ymd(risco.poco[,2])), format="%d-%m-%Y")
+
+risco.poco <- select(risco.poco, c("Poço","Dt.Deterministica","Dt.Provavel","Dt.Otimista","Dt.Conservador"))
+Nova.Dt.Calculada.Simulada["Poço"] <- Poco.Consolidado2$Poço  
+
+Pocos.graf.final <- left_join(Nova.Dt.Calculada.Simulada,risco.poco, by=c("Poço"="Poço"))
+
+Pocos.graf.long <- Pocos.graf.final %>% gather(key = "Cenario", value = "Datas", c(1:as.numeric(paste(Nsim)),as.numeric(paste(Nsim+2)):as.numeric(paste(Nsim+5)))) #
+
+Pocos.graf.long$Datas <- format(as.Date(dmy(Pocos.graf.long[,3])), format="%d-%m-%Y") 
+
+Pocos.graf.long = Pocos.graf.long %>% 
+  mutate(Datas = as.Date(dmy(Datas), "%d-%m-%Y")) %>%
+  arrange(Datas)
+
+Pocos.graf.long$Datas <- format(as.Date(ymd(Pocos.graf.long$Datas)), format="%d-%m-%Y")
+
+#group = UEP
+Pocos.posSim <- ggplotly(ggplot(Pocos.graf.long, aes(x= format(as.Date(dmy(Datas)), format="%d-%m-%Y"), y = Poço, group =Cenario)) +
+      geom_point(aes(color = Cenario), size = 2) +scale_x_discrete(limits = Pocos.graf.long$Datas) +
+  scale_color_manual(name = "Cenario",
+                     values = c("Dt.Conservador" = "red", 
+                                  "Dt.Provavel" = "black",
+                                  "Dt.Otimista" = "blue"),
+                     labels = c("Dt.Conservador", "Dt.Otimista", "Dt.Provavel"))+
+  labs(title="Poços Simulado vs Planejado", x="Datas", y="Poços") +
+      theme(plot.title=element_text(size=20, face="bold", hjust = 0.5)),
+            axis.text.x=element_text(size=10, angle=90,hjust=1,vjust=0.5),
+            axis.text.y=element_text(size=10),
+            axis.title.x=element_text(size=10),
+            axis.title.y=element_text(size=10))
+
+         output$Pocos.pos.Sim <- renderUI({ Pocos.posSim }) 
+     
+#Tempo:            
+time3 <- toc()
+Tempo3 = time3$toc - time3$tic  
+    output$Time.Sim <- renderValueBox({
+    valueBox(
+      paste0(round(Tempo3,1), " Seg."), paste0("Tempo"), icon = icon("clock"),
+      color = "light-blue"
+    )
+    })
+
+})#Simular 
+
+      # Comparar Meta:
+
+observeEvent(input$SimularMeta, { 
+
+  
+    if (input$SELseriePOT2 == "ARIMA") ip2=1 
+    if (input$SELseriePOT2 == "ETS")  ip2=2
+    if (input$SELseriePOT2 == "TBATs")  ip2=3
+    if (input$SELseriePOT2 == "ELM")  ip2=4
+
+  # Number of simulations
+  Nsim = input$n_sim
+  
+  if (ip2 ==1) {
+    Metodo.Pot2 = simular.ARIMA.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf = Pot.graf.ARIMA
+    Metodo.P50.Pot = Metodo.Pot.ARIMA
+  }
+  if (ip2 ==2) {
+    Metodo.Pot2 = simular.ETS.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf = GRAF.ETS.Potencial(Metodo.Pot2)
+    Metodo.P50.Pot = TS.ETS.Potencial(Pot.graf) 
+  }
+  if (ip2 ==3) {
+    Metodo.Pot2 = simular.TBATs.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf = GRAF.TBATs.Potencial(Metodo.Pot2)
+    Metodo.P50.Pot = TS.TBATs.Potencial(Pot.graf) 
+  }
+  if (ip2 ==4) {
+    Metodo.Pot2 = simular.ELM.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+    Pot.graf = GRAF.ELM.Potencial(Metodo.Pot2)
+    Metodo.P50.Pot = TS.ELM.Potencial(Pot.graf) 
+  }
+  
+  
+  
+ #eventReactive(input$SELserieIEP2, {
+    if (input$SELserieIEP2 == "ARIMA") ie2=1 
+    if (input$SELserieIEP2 == "ETS")  ie2=2
+    if (input$SELserieIEP2 == "TBATs")  ie2=3
+    if (input$SELserieIEP2 == "ELM")  ie2=4
+
+  
+  if (ie2 ==1) {
+    Metodo.IEP2 = simular.ARIMA.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf = IEP.graf.ARIMA
+    Metodo.P50.IEP = Metodo.IEP.ARIMA
+  }
+  if (ie2 ==2) {
+    Metodo.IEP2 = simular.ETS.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf = GRAF.ETS.Potencial(Metodo.IEP2)
+    Metodo.P50.IEP = TS.ETS.Potencial(IEP.graf)
+  }
+  if (ie2 ==3) {
+    Metodo.IEP2 = simular.TBATs.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf = GRAF.TBATs.Potencial(Metodo.IEP2)
+    Metodo.P50.IEP = TS.TBATs.Potencial(IEP.graf)
+  }
+  if (ie2 ==4) {
+    Metodo.IEP2 = simular.ELM.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+    IEP.graf = GRAF.ELM.Potencial(Metodo.IEP2)
+    Metodo.P50.IEP = TS.ELM.Potencial(IEP.graf)
+  }
+    
+#})     
+Datas.Simuladas = Pocos.Sim(CurvaPocosNovos, Analisederisco, Nsim)
+Nova.Dt.Calculada.Simulada = transf.dt.sim(Datas.Simuladas,Nsim)
+Poco.Consolidado2 = cons.poco(CurvaPocosNovos)
+PocosSimulado.Agregado = Pocos.curva.Sim(Nova.Dt.Calculada.Simulada,Poco.Consolidado2, Datas.Simuladas,CurvaPocosNovos, Analisederisco.copy, Nsim)
+
+Paradas.Agreg.Sim = Paradas.Sim(ParadasProgramadas, datasetClusterParada, Nsim)
+    
+          ##Agrega Poco Novo:
+          Metodo.PotPoco <- right_join(PocosSimulado.Agregado,Metodo.Pot2, by = c("variable" = "key", "Date" = "Date", "Plataforma" = "UEP.y"))
+          
+          ##Agrega Parada
+          Metodo.PotPocoParada <- right_join(Paradas.Agreg.Sim,Metodo.PotPoco, by = c("variable" = "variable", "Date" = "Date", "Plataforma" = "Plataforma"))
+
+          Metodo.PotPocoParada <- inner_join(Metodo.PotPocoParada,datasetPot.UEP, by = c("Plataforma" = "UEP"))     
+          
+    Resultado.ajus = agregar(Metodo.PotPocoParada, Metodo.IEP2)
+         
+ Producao.Iter = aggregate(Producao ~ iter, Resultado.ajus, sum)
+  Producao.Iter = Producao.Iter %>% mutate(rank = rank(Producao)) %>% select(-Producao) #%>% group_by(UEP) 
+  
+  Resultado.graf = inner_join(Producao.Iter,Resultado.ajus, by = c("iter" = "iter"))  
+  
+  
+  
+  
+Resultado.meta = Resultado.graf
+Resultado.meta["DiasMonth"] = days_in_month(as.Date(Resultado.graf$Date))
+Resultado.meta["Prod.Ano"] =Resultado.meta$Producao*Resultado.meta$DiasMonth/365/1000
+Resultado.meta.agg = aggregate(Prod.Ano ~ iter,Resultado.meta,sum)
+media = mean(Resultado.meta.agg$Prod.Ano)
+desvpad = sd(Resultado.meta.agg$Prod.Ano)
+meta = input$n_meta
+
+ P.sucesso = 1- pnorm(q = meta, mean = media, sd = desvpad,     
+          lower.tail = TRUE)
+    
+    delta <- ((media+3*desvpad)- meta)/100
+    x2    <- seq(meta + delta, (media+3*desvpad) - delta, length = 100)
+    y2 <- dnorm(x2, mean = media, sd = desvpad)
+    x2 = c(meta, x2, (media+3*desvpad))
+    y2 = c(0, y2, 0)
+    df2 = cbind(x2,y2)%>%as.data.frame()
+       
+    df = as.data.frame(rnorm(500, mean=media, sd=desvpad))
+    names(df) = "x"
+   
+
+ df$y = dnorm(df$x, mean=media, sd=desvpad)
+    theme_set(theme_gray(base_size = 20))
+    
+    prod.meta = ggplotly(ggplot(df, aes(x, y)) + geom_polygon(data = df2, aes(x2, y2), fill = "gray")+geom_line()+ggtitle("Probabilidade de atingir a meta") +      xlab("Producao média do ano") +  ylab("probabilidade") +labs(y = "f (x)") +    geom_vline(xintercept = meta, lwd = 2, col = "gray", linetype = "dashed") +
+      theme(axis.text.y = element_blank(), plot.title = element_text(hjust = 0.5))  + annotate ("text", x = meta, y = 0 , label = paste0("Prob.: ", round(P.sucesso,3)*100," %" ), col = "darkblue", cex = 5))
+      
+    
+     output$prod.meta.sim <- renderUI({ prod.meta }) 
+
+})#Simular Meta
+  
+observeEvent(input$Comparar, {
+#tic()
+  # Number of simulations
+  Nsim = input$n_sim
+      
+Metodo.Pot.ARIMA = simular.ARIMA.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+Metodo.Pot.ETS = simular.ETS.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+Metodo.Pot.TBATs = simular.TBATs.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+Metodo.Pot.ELM = simular.ELM.Potencial(pot.sem.pocos, datasetPot.UEP, Nsim)
+Metodo.IEP.ARIMA = simular.ARIMA.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+Metodo.IEP.ETS = simular.ETS.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+Metodo.IEP.TBATs = simular.TBATs.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+Metodo.IEP.ELM = simular.ELM.IEP(datasetIEP.ajus, datasetIEP.UEP, Nsim)
+
+
+Datas.Simuladas = Pocos.Sim(CurvaPocosNovos, Analisederisco, Nsim)
+Nova.Dt.Calculada.Simulada = transf.dt.sim(Datas.Simuladas,Nsim)
+Poco.Consolidado2 = cons.poco(CurvaPocosNovos)
+PocosSimulado.Agregado = Pocos.curva.Sim(Nova.Dt.Calculada.Simulada,Poco.Consolidado2, Datas.Simuladas,CurvaPocosNovos, Analisederisco.copy, Nsim)
+
+Paradas.Agreg.Sim = Paradas.Sim(ParadasProgramadas, datasetClusterParada, Nsim)
+
+###Agregacao ARIMA:    
+          ##Agrega Poco Novo:
+ARIMA.PotPoco <- right_join(PocosSimulado.Agregado,Metodo.Pot.ARIMA, by = c("variable" = "key", "Date" = "Date", "Plataforma" = "UEP.y"))
+          
+          ##Agrega Parada
+ARIMA.PotPocoParada <- right_join(Paradas.Agreg.Sim,ARIMA.PotPoco, by = c("variable" = "variable", "Date" = "Date", "Plataforma" = "Plataforma"))
+
+ARIMA.PotPocoParada <- inner_join(ARIMA.PotPocoParada,datasetPot.UEP, by = c("Plataforma" = "UEP"))
+
+ARIMA.Resultado.ajus = agregar(ARIMA.PotPocoParada,Metodo.IEP.ARIMA)
+         
+ARIMA.Producao.Iter = aggregate(Producao ~ iter, ARIMA.Resultado.ajus, sum)
+
+ARIMA.Producao.Iter = ARIMA.Producao.Iter %>% mutate(rank = rank(Producao)) %>% select(-Producao) #%>% group_by(UEP) 
+  
+ARIMA.Resultado.graf = inner_join(ARIMA.Producao.Iter,ARIMA.Resultado.ajus, by = c("iter" = "iter"))
+
+      #ts producao P50
+ARIMA.tsProd.P50 = ARIMA.tsPot.P50 = ARIMA.tsIEP.P50 = ARIMA.tsNumIEP.P50 = ARIMA.tsDenIEP.P50 = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  ARIMA.tsProd.P50[,j] <- ts(filter(ARIMA.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+  ARIMA.tsPot.P50[,j] <- ts(filter(ARIMA.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$Potencial, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  ARIMA.tsNumIEP.P50[,j] <- ts(filter(ARIMA.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$NumIEP, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  ARIMA.tsDenIEP.P50[,j] <- ts(filter(ARIMA.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$DenIEP, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  ARIMA.tsIEP.P50[,j] <- ts(filter(ARIMA.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$IEP, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+ARIMA.tsProd.P50 <- as.data.frame(ARIMA.tsProd.P50)
+
+ARIMA.tsProd.P50["Total"] = rowSums(ARIMA.tsProd.P50) 
+
+ARIMA.tsPot.P50 <- as.data.frame(ARIMA.tsPot.P50)
+
+ARIMA.tsPot.P50["Total"] = rowSums(ARIMA.tsPot.P50)  
+
+ARIMA.tsIEP.P50 <- as.data.frame(ARIMA.tsIEP.P50)
+ARIMA.tsNumIEP.P50 <- as.data.frame(ARIMA.tsNumIEP.P50)
+ARIMA.tsDenIEP.P50 <- as.data.frame(ARIMA.tsDenIEP.P50)
+ARIMA.tsNumIEP.P50["TotalNum"] = rowSums(ARIMA.tsNumIEP.P50)  
+ARIMA.tsDenIEP.P50["TotalDen"] = rowSums(ARIMA.tsDenIEP.P50)
+ARIMA.tsIEP.P50["Total"] = ARIMA.tsNumIEP.P50$TotalNum / ARIMA.tsDenIEP.P50$TotalDen
+  #ARIMA.dataset.Merge =  MergeCen(ARIMA.Resultado.graf) 
+
+#Plat2 = Plat.Sel.Result(input$SELplat2) #input$SELplat3
+#Plat3 = Plat.Sel(input$SELplat3)
+
+#ARIMA.dataset.Merge2 <- filter(dataset.Merge, variable==Plat3)
+  
+  
+###Agregacao ETS  
+    
+          ##Agrega Poco Novo:
+ETS.PotPoco <- right_join(PocosSimulado.Agregado,Metodo.Pot.ETS, by = c("variable" = "key", "Date" = "Date", "Plataforma" = "UEP.y"))
+          
+          ##Agrega Parada
+ETS.PotPocoParada <- right_join(Paradas.Agreg.Sim,ETS.PotPoco, by = c("variable" = "variable", "Date" = "Date", "Plataforma" = "Plataforma"))
+
+ETS.PotPocoParada <- inner_join(ETS.PotPocoParada,datasetPot.UEP, by = c("Plataforma" = "UEP"))
+          
+ETS.Resultado.ajus = agregar(ETS.PotPocoParada, Metodo.IEP.ETS)
+         
+ETS.Producao.Iter = aggregate(Producao ~ iter, ETS.Resultado.ajus, sum)
+ETS.Producao.Iter = ETS.Producao.Iter %>% mutate(rank = rank(Producao)) %>% select(-Producao) #%>% group_by(UEP) 
+  
+ETS.Resultado.graf = inner_join(ETS.Producao.Iter,ETS.Resultado.ajus, by = c("iter" = "iter"))
+
+  #ETS.dataset.Merge =  MergeCen(ETS.Resultado.graf)  
+
+      #ts producao P50
+ETS.tsProd.P50 = ETS.tsPot.P50 = ETS.tsIEP.P50 = ETS.tsNumIEP.P50 = ETS.tsDenIEP.P50 = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  ETS.tsProd.P50[,j] <- ts(filter(ETS.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+  ETS.tsPot.P50[,j] <- ts(filter(ETS.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$Potencial, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  ETS.tsNumIEP.P50[,j] <- ts(filter(ETS.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$NumIEP, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  ETS.tsDenIEP.P50[,j] <- ts(filter(ETS.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$DenIEP, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  ETS.tsIEP.P50[,j] <- ts(filter(ETS.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$IEP, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+ETS.tsProd.P50 <- as.data.frame(ETS.tsProd.P50)
+
+ETS.tsProd.P50["Total"] = rowSums(ETS.tsProd.P50) 
+
+ETS.tsPot.P50 <- as.data.frame(ETS.tsPot.P50)
+
+ETS.tsPot.P50["Total"] = rowSums(ETS.tsPot.P50)  
+
+ETS.tsIEP.P50 <- as.data.frame(ETS.tsIEP.P50)
+ETS.tsNumIEP.P50 <- as.data.frame(ETS.tsNumIEP.P50)
+ETS.tsDenIEP.P50 <- as.data.frame(ETS.tsDenIEP.P50)
+ETS.tsNumIEP.P50["TotalNum"] = rowSums(ETS.tsNumIEP.P50)  
+ETS.tsDenIEP.P50["TotalDen"] = rowSums(ETS.tsDenIEP.P50)
+ETS.tsIEP.P50["Total"] = ETS.tsNumIEP.P50$TotalNum / ETS.tsDenIEP.P50$TotalDen
+
+###Agregacao TBATs  
+    
+          ##Agrega Poco Novo:
+TBATs.PotPoco <- right_join(PocosSimulado.Agregado,Metodo.Pot.TBATs, by = c("variable" = "key", "Date" = "Date", "Plataforma" = "UEP.y"))
+          
+          ##Agrega Parada
+TBATs.PotPocoParada <- right_join(Paradas.Agreg.Sim,TBATs.PotPoco, by = c("variable" = "variable", "Date" = "Date", "Plataforma" = "Plataforma"))
+
+TBATs.PotPocoParada <- inner_join(TBATs.PotPocoParada,datasetPot.UEP, by = c("Plataforma" = "UEP"))
+          
+TBATs.Resultado.ajus = agregar(TBATs.PotPocoParada, Metodo.IEP.TBATs)
+         
+TBATs.Producao.Iter = aggregate(Producao ~ iter, TBATs.Resultado.ajus, sum)
+TBATs.Producao.Iter = TBATs.Producao.Iter %>% mutate(rank = rank(Producao)) %>% select(-Producao) #%>% group_by(UEP) 
+  
+TBATs.Resultado.graf = inner_join(TBATs.Producao.Iter,TBATs.Resultado.ajus, by = c("iter" = "iter"))
+
+      #ts producao P50
+TBATs.tsProd.P50 = TBATs.tsPot.P50 = TBATs.tsIEP.P50 = TBATs.tsNumIEP.P50 = TBATs.tsDenIEP.P50 = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  TBATs.tsProd.P50[,j] <- ts(filter(TBATs.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+  TBATs.tsPot.P50[,j] <- ts(filter(TBATs.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$Potencial, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  TBATs.tsNumIEP.P50[,j] <- ts(filter(TBATs.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$NumIEP, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  TBATs.tsDenIEP.P50[,j] <- ts(filter(TBATs.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$DenIEP, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  TBATs.tsIEP.P50[,j] <- ts(filter(TBATs.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$IEP, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+TBATs.tsProd.P50 <- as.data.frame(TBATs.tsProd.P50)
+
+TBATs.tsProd.P50["Total"] = rowSums(TBATs.tsProd.P50) 
+
+TBATs.tsPot.P50 <- as.data.frame(TBATs.tsPot.P50)
+
+TBATs.tsPot.P50["Total"] = rowSums(TBATs.tsPot.P50)  
+
+TBATs.tsIEP.P50 <- as.data.frame(TBATs.tsIEP.P50)
+TBATs.tsNumIEP.P50 <- as.data.frame(TBATs.tsNumIEP.P50)
+TBATs.tsDenIEP.P50 <- as.data.frame(TBATs.tsDenIEP.P50)
+TBATs.tsNumIEP.P50["TotalNum"] = rowSums(TBATs.tsNumIEP.P50)  
+TBATs.tsDenIEP.P50["TotalDen"] = rowSums(TBATs.tsDenIEP.P50)
+TBATs.tsIEP.P50["Total"] = TBATs.tsNumIEP.P50$TotalNum / TBATs.tsDenIEP.P50$TotalDen
+###Agregacao ELM  
+    
+          ##Agrega Poco Novo:
+ELM.PotPoco <- right_join(PocosSimulado.Agregado,Metodo.Pot.ELM, by = c("variable" = "key", "Date" = "Date", "Plataforma" = "UEP.y"))
+          
+          ##Agrega Parada
+ELM.PotPocoParada <- right_join(Paradas.Agreg.Sim,ELM.PotPoco, by = c("variable" = "variable", "Date" = "Date", "Plataforma" = "Plataforma"))
+
+ELM.PotPocoParada <- inner_join(ELM.PotPocoParada,datasetPot.UEP, by = c("Plataforma" = "UEP"))
+          
+ELM.Resultado.ajus = agregar(ELM.PotPocoParada, Metodo.IEP.ELM)
+         
+ELM.Producao.Iter = aggregate(Producao ~ iter, ELM.Resultado.ajus, sum)
+ELM.Producao.Iter = ELM.Producao.Iter %>% mutate(rank = rank(Producao)) %>% select(-Producao) #%>% group_by(UEP) 
+  
+ELM.Resultado.graf = inner_join(ELM.Producao.Iter,ELM.Resultado.ajus, by = c("iter" = "iter"))
+
+      #ts producao P50
+ELM.tsProd.P50 = ELM.tsPot.P50 = ELM.tsIEP.P50 = ELM.tsNumIEP.P50 = ELM.tsDenIEP.P50 = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  ELM.tsProd.P50[,j] <- ts(filter(ELM.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+  ELM.tsPot.P50[,j] <- ts(filter(ELM.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$Potencial, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  ELM.tsNumIEP.P50[,j] <- ts(filter(ELM.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$NumIEP, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  ELM.tsDenIEP.P50[,j] <- ts(filter(ELM.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$DenIEP, start = c(2022, 01), end = c(2022, 12), frequency = 12)
+  ELM.tsIEP.P50[,j] <- ts(filter(ELM.Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$IEP, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+ELM.tsProd.P50 <- as.data.frame(ELM.tsProd.P50)
+
+ELM.tsProd.P50["Total"] = rowSums(ELM.tsProd.P50) 
+
+ELM.tsPot.P50 <- as.data.frame(ELM.tsPot.P50)
+
+ELM.tsPot.P50["Total"] = rowSums(ELM.tsPot.P50)  
+
+ELM.tsIEP.P50 <- as.data.frame(ELM.tsIEP.P50)
+ELM.tsNumIEP.P50 <- as.data.frame(ELM.tsNumIEP.P50)
+ELM.tsDenIEP.P50 <- as.data.frame(ELM.tsDenIEP.P50)
+ELM.tsNumIEP.P50["TotalNum"] = rowSums(ELM.tsNumIEP.P50)  
+ELM.tsDenIEP.P50["TotalDen"] = rowSums(ELM.tsDenIEP.P50)
+ELM.tsIEP.P50["Total"] = ELM.tsNumIEP.P50$TotalNum / ELM.tsDenIEP.P50$TotalDen
+
+#Plataforma selecionada:
+Plat3 = Plat.Sel(input$SELplat3)
+
+#Prod da plataforma selecionada
+ARIMA.Producao.P50 <- ts(ARIMA.tsProd.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+ETS.Producao.P50 <- ts(ETS.tsProd.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+TBATs.Producao.P50 <- ts(TBATs.tsProd.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+ELM.Producao.P50 <- ts(ELM.tsProd.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+ts.Prod22 <- ts(ts_RealProd[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+
+#Pot da plataforma selecionada
+ARIMA.Pot.P50 <- ts(ARIMA.tsPot.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+ETS.Pot.P50 <- ts(ETS.tsPot.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+TBATs.Pot.P50 <- ts(TBATs.tsPot.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+ELM.Pot.P50 <- ts(ELM.tsPot.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+ts.Pot22 <- ts(ts_RealPot[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+
+#IEP da plataforma selecionada
+ARIMA.IEP.P50 <- ts(ARIMA.tsIEP.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+ETS.IEP.P50 <- ts(ETS.tsIEP.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+TBATs.IEP.P50 <- ts(TBATs.tsIEP.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+ELM.IEP.P50 <- ts(ELM.tsIEP.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+ts.IEP22 <- ts(ts_RealIEP[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+         
+Comp.Producao <- autoplot(ts.Prod22)+autolayer(ARIMA.Producao.P50, show.legend = TRUE)+autolayer(ETS.Producao.P50, show.legend = TRUE)+autolayer(TBATs.Producao.P50, show.legend = TRUE)+autolayer(ELM.Producao.P50, show.legend = TRUE)
+
+Comp.Pot <- autoplot(ts.Pot22)+autolayer(ARIMA.Pot.P50, show.legend = TRUE)+autolayer(ETS.Pot.P50, show.legend = TRUE)+autolayer(TBATs.Pot.P50, show.legend = TRUE)+autolayer(ELM.Pot.P50, show.legend = TRUE)
+
+Comp.IEP <- autoplot(ts.IEP22)+autolayer(ARIMA.IEP.P50, show.legend = TRUE)+autolayer(ETS.IEP.P50, show.legend = TRUE)+autolayer(TBATs.IEP.P50, show.legend = TRUE)+autolayer(ELM.IEP.P50, show.legend = TRUE)
+          
+          thematic_on(bg = 'lavender') 
+output$ProdComparacao  <- renderPlot({ Comp.Producao })
+
+          thematic_on(bg = 'lavender') 
+output$PotComparacao  <- renderPlot({ Comp.Pot })
+
+          thematic_on(bg = 'lavender') 
+output$IEPComparacao  <- renderPlot({ Comp.IEP })
+
+    ARIMA.Prod.erro = forecast::accuracy(ts.Prod22,ARIMA.Producao.P50)[5]
+    ETS.Prod.erro = forecast::accuracy(ts.Prod22,ETS.Producao.P50)[5]
+    TBATs.Prod.erro = forecast::accuracy(ts.Prod22,TBATs.Producao.P50)[5]
+    ELM.Prod.erro = forecast::accuracy(ts.Prod22,ELM.Producao.P50)[5]
+    
+    ARIMA.Pot.erro = forecast::accuracy(ts.Pot22,ARIMA.Pot.P50)[5]
+    ETS.Pot.erro = forecast::accuracy(ts.Pot22,ETS.Pot.P50)[5]
+    TBATs.Pot.erro = forecast::accuracy(ts.Pot22,TBATs.Pot.P50)[5]
+    ELM.Pot.erro = forecast::accuracy(ts.Pot22,ELM.Pot.P50)[5]
+    
+    ARIMA.IEP.erro = forecast::accuracy(ts.IEP22,ARIMA.IEP.P50)[5]
+    ETS.IEP.erro = forecast::accuracy(ts.IEP22,ETS.IEP.P50)[5]
+    TBATs.IEP.erro = forecast::accuracy(ts.IEP22,TBATs.IEP.P50)[5]
+    ELM.IEP.erro = forecast::accuracy(ts.IEP22,ELM.IEP.P50)[5]
+
+    
+ ARIMA.Prod.erro = round(ARIMA.Prod.erro,2)
+ ETS.Prod.erro = round(ETS.Prod.erro,2)
+ TBATs.Prod.erro = round(TBATs.Prod.erro,2)
+ ELM.Prod.erro = round(ELM.Prod.erro,2)
+ 
+  ARIMA.Pot.erro = round(ARIMA.Pot.erro,2)
+ ETS.Pot.erro = round(ETS.Pot.erro,2)
+ TBATs.Pot.erro = round(TBATs.Pot.erro,2)
+ ELM.Pot.erro = round(ELM.Pot.erro,2)
+ 
+  ARIMA.IEP.erro = round(ARIMA.IEP.erro,2)
+ ETS.IEP.erro = round(ETS.IEP.erro,2)
+ TBATs.IEP.erro = round(TBATs.IEP.erro,2)
+ ELM.IEP.erro = round(ELM.IEP.erro,2)
+
+Erros.Geral = data.frame(modelo = c("ARIMA","ETS","TBATs","ELM","ARIMA","ETS","TBATs","ELM","ARIMA","ETS","TBATs","ELM"),Erro  = c(ARIMA.Prod.erro,ETS.Prod.erro,TBATs.Prod.erro,ELM.Prod.erro,ARIMA.Pot.erro,ETS.Pot.erro,TBATs.Pot.erro,ELM.Pot.erro,ARIMA.IEP.erro,ETS.IEP.erro,TBATs.IEP.erro,ELM.IEP.erro), Dimensao  = c("Prod","Prod","Prod","Prod","Pot","Pot","Pot","Pot","Efic","Efic","Efic","Efic"))
+
+
+erro.comp <- ggplot(Erros.Geral,aes(x=Dimensao,y=Erro,fill=modelo))+geom_bar(position = "dodge",stat = "identity")+labs(title="Erro por método e dimensão de entidade",x="Entidade",y="Erro")+geom_label(aes(label = Erro, y = Erro + 0.05),
+    position = position_dodge(0.9),
+    vjust = 0, size = 8
+  )+theme(plot.title=element_text(size=30,face="bold",hjust=0.5),axis.text.x=element_text(size=20,angle=90,hjust=1,vjust=0.5),axis.text.y=element_text(size=20),axis.title.x=element_text(size=20,face="bold"),axis.title.y=element_text(size=20,face="bold"),legend.text = element_text(size=20))  
+  #+geom_text(aes(label = Erro))) 
+  #ggplotly() ,
+            #position = position_stack(vjust = 0.5)
+#,axis.text.x=element_text(size=10,angle=90,hjust=1,vjust=0.5),axis.text.y=element_text(size=10),axis.title.x=element_text(size=10),axis.title.y=element_text(size=10)
+#
+#+ geom_line(aes(x=Dimensao,y=Erro, group = 1),inherit.aes = FALSE)
+
+#+ggtitle("Erros por Modelo de cada dimensão de entidade")+ylab("Erro")
+
+  output$graf.erro <- renderPlot({ erro.comp })
+
+output$result.simulador <- DT::renderDT({
+ DT::datatable(Erros.Geral, options = 
+              list(lengthMenu = c(100, 300, 400), pageLength = 12),
+              editable = FALSE)})
+
+#time4 <- toc()
+#Tempo4 = time4$toc - time4$tic  
+#    output$Time.Comp <- renderValueBox({
+#    valueBox(
+#      paste0(round(Tempo4,1), " Seg."), paste0("Tempo"), icon = icon("clock"),
+#      color = "light-blue"
+#    )
+#    })
+	   
+
+}) #botao comparar 
+}
+
+shinyApp(ui, server)
+
+```
+
+
+
+
+#############TESTES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+## Embedded Application
+
+It's also possible to embed an entire Shiny application within an R Markdown document using the `shinyAppDir` function. This example embeds a Shiny application located in another directory:
+
+as.numeric(paste(Nsim))
+
+#Poços Final:
+```{r ts erroS}
+
+Poco.Teste <- aggregate(Curva ~ Poco + Dt.Entrada, data=CurvaPocosNovos,FUN=mean)
+Poco.Teste<- Poco.Teste %>% arrange(Poco)
+  Analisederisco["Dt.Deterministica"] <- Poco.Teste$Dt.Entrada
+
+risco.poco <- select(Analisederisco, c("Poço","Dt.Deterministica","Mais.Provavel","Otimista","Conservador"))
+
+risco.poco$Dt.Provavel <- format(as.Date(ymd(risco.poco[,2]))+ days(risco.poco[,3]), format="%d-%m-%Y")
+risco.poco$Dt.Otimista <- format(as.Date(ymd(risco.poco[,2]))+ days(risco.poco[,4]), format="%d-%m-%Y")
+risco.poco$Dt.Conservador <- format(as.Date(ymd(risco.poco[,2]))+ days(risco.poco[,5]), format="%d-%m-%Y")
+risco.poco$Dt.Deterministica <- format(as.Date(ymd(risco.poco[,2])), format="%d-%m-%Y")
+
+risco.poco <- select(risco.poco, c("Poço","Dt.Deterministica","Dt.Provavel","Dt.Otimista","Dt.Conservador"))
+Nova.Dt.Calculada.Simulada["Poço"] <- Poco.Consolidado2$Poço  
+
+Pocos.graf.final <- left_join(Nova.Dt.Calculada.Simulada,risco.poco, by=c("Poço"="Poço"))
+
+Pocos.graf.long <- Pocos.graf.final %>% gather(key = "Cenario", value = "Datas", c(1:as.numeric(paste(Nsim)),as.numeric(paste(Nsim+2)):as.numeric(paste(Nsim+5)))) #
+
+Pocos.graf.long$Datas <- format(as.Date(dmy(Pocos.graf.long[,3])), format="%d-%m-%Y") 
+
+Pocos.graf.long = Pocos.graf.long %>% 
+  mutate(Datas = as.Date(dmy(Datas), "%d-%m-%Y")) %>%
+  arrange(Datas)
+
+Pocos.graf.long$Datas <- format(as.Date(ymd(Pocos.graf.long$Datas)), format="%d-%m-%Y")
+
+#group = UEP
+ggplotly(ggplot(Pocos.graf.long, aes(x= format(as.Date(dmy(Datas)), format="%d-%m-%Y"), y = Poço, group =Cenario)) +
+      geom_point(aes(color = Cenario), size = 2) +scale_x_discrete(limits = Pocos.graf.long$Datas) +
+  scale_color_manual(name = "Cenario",
+                     values = c("Dt.Conservador" = "red", 
+                                  "Dt.Provavel" = "black",
+                                  "Dt.Otimista" = "blue"),
+                     labels = c("Dt.Conservador", "Dt.Otimista", "Dt.Provavel"))+
+  labs(title="Poços Simulado vs Planejado", x="Datas", y="Poços") +
+      theme(plot.title=element_text(size=20, face="bold", hjust = 0.5)),
+            axis.text.x=element_text(size=10, angle=90,hjust=1,vjust=0.5),
+            axis.text.y=element_text(size=5),
+            axis.title.x=element_text(size=10),
+            axis.title.y=element_text(size=10))
+
+
+#ggplotly(p)
+#ggplot(Pocos.graf.long, aes(x = Datas, y = Poço, fill = Cenario))+ scale_x_date() #+ geom_violin() +  geom_point(aes(x = Poço, y = Dt.Provavel), alpha = 0.4, color = 'green')#, fill = UEP
+          
+          #+         geom_violin() + geom_point(aes(x = Plataforma, y = Duracao.Planejada), alpha = 0.4, color = 'green'))
+
+#
+```
+
+ggplot(Pocos.graf.long, aes(x = Datas, y = Poço, fill = Cenario))+ scale_x_date()+
+  geom_rect(data = Pocos.graf.long, 
+            aes(xmin = as.Date("01-01-2022", "%d-%m-%Y"), 
+                xmax = as.Date("31-12-2022",  "%d-%m-%Y")))
+                
+#Merge Final:
+```{r ts erroS}
+          ##Agrega Poco Novo:
+          Metodo.PotPoco <- right_join(PocosSimulado.Agregado,prevPotARIMA, by = c("variable" = "key", "Date" = "Date", "Plataforma" = "UEP.y"))
+          
+          ##Agrega Parada
+          ARIMA.PotPocoParada <- right_join(Paradas.Agreg.Sim,Metodo.PotPoco, by = c("variable" = "variable", "Date" = "Date", "Plataforma" = "Plataforma"))
+ 
+          Metodo.PotPocoParada <- inner_join(ARIMA.PotPocoParada,datasetPot.UEP, by = c("Plataforma" = "UEP"))
+          
+    Resultado.ajus = agregar(Metodo.PotPocoParada, prevIEPARIMA)
+         
+ Producao.Iter = aggregate(Producao ~ iter, Resultado.ajus, sum)
+  Producao.Iter = Producao.Iter %>% mutate(rank = rank(Producao)) %>% select(-Producao) #%>% group_by(UEP) 
+  
+  Resultado.graf = inner_join(Producao.Iter,Resultado.ajus, by = c("iter" = "iter"))
+
+    dataset.Merge =  MergeCen(Resultado.graf) 
+
+
+```
+
+
+
+    
+          ##Agrega Poco Novo:
+Metodo.PotPoco <- right_join(PocosSimulado.Agregado,prevPotARIMA, by = c("variable" = "key", "Date" = "Date", "Plataforma" = "UEP.y"))
+          
+          ##Agrega Parada
+Metodo.PotPocoParada <- right_join(Paradas.Agreg.Sim,Metodo.PotPoco, by = c("variable" = "variable", "Date" = "Date", "Plataforma" = "Plataforma"))
+
+Metodo.PotPocoParada <- inner_join(Metodo.PotPocoParada,datasetPot.UEP, by = c("Plataforma" = "UEP"))
+  
+
+ Resultado.ajus = agregar(Metodo.PotPocoParada, prevIEPARIMA)
+         
+ Producao.Iter = aggregate(Producao ~ iter, Resultado.ajus, sum)
+ Producao.Iter = Producao.Iter %>% mutate(rank = rank(Producao)) %>% select(-Producao) #%>% group_by(UEP) 
+  
+  Resultado.graf = inner_join(Producao.Iter,Resultado.ajus, by = c("iter" = "iter"))
+
+  dataset.Merge =  MergeCen(Resultado.graf) 
+
+
+#Distribuição Prevista vs Meta
+```{r Meta}
+
+Resultado.meta = Resultado.graf
+Resultado.meta["DiasMonth"] = days_in_month(as.Date(Resultado.graf$Date))
+Resultado.meta["Prod.Ano"] =Resultado.meta$Producao*Resultado.meta$DiasMonth/365/1000
+Resultado.meta.agg = aggregate(Prod.Ano ~ iter,Resultado.meta,sum)
+media = mean(Resultado.meta.agg$Prod.Ano)
+desvpad = sd(Resultado.meta.agg$Prod.Ano)
+meta = 559
+
+ P.sucesso = 1- pnorm(q = meta, mean = media, sd = desvpad,     
+          lower.tail = TRUE)
+    
+    delta <- ((media+3*desvpad)- meta)/100
+    x2    <- seq(meta + delta, (media+3*desvpad) - delta, length = 100)
+    y2 <- dnorm(x2, mean = media, sd = desvpad)
+    x2 = c(meta, x2, (media+3*desvpad))
+    y2 = c(0, y2, 0)
+    df2 = cbind(x2,y2)%>%as.data.frame()
+       
+    df = as.data.frame(rnorm(500, mean=media, sd=desvpad))
+    names(df) = "x"
+   
+
+ df$y = dnorm(df$x, mean=media, sd=desvpad)
+    theme_set(theme_gray(base_size = 20))
+    
+    ggplot(df, aes(x, y)) + geom_polygon(data = df2, aes(x2, y2), fill = "gray")+geom_line()+ggtitle("probabilidade da meta") +      xlab("producao media") +  ylab("probabilidade") +labs(y = "f(x)") +    geom_vline(xintercept = meta, lwd = 3, col = "gray", linetype = "dashed") +
+      theme(axis.text.y = element_blank())  + annotate ("text", x = meta, y = 0 , label = paste0("Prob.: ", round(P.sucesso,3)*100," %" ), col = "blue", cex = 4)
+    
+
+```
+ 
+
+
+
+
+
+    Pot.graf = Pot.graf.ARIMA
+    Metodo.P50.Pot = Metodo.Pot.ARIMA
+```{r ts erroS, echo=FALSE} 
+tsProd.P50 = matrix(NA, ncol = k, nrow = nPrev)
+for(j in 1:k){
+  tsProd.P50[,j] <- ts(filter(Resultado.graf, Plataforma == UEPs[j] & rank == rank50)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+}
+
+
+tsProd.P50 <- as.data.frame(tsProd.P50)
+
+tsProd.P50["Total"] = rowSums(tsProd.P50)  
+ 
+#Resultado.2 = aggregate(Producao ~ iter+rank+Date, Resultado.graf, sum)
+    
+Plat2=Plat3=4
+
+Producao.P50 <- ts(tsProd.P50[,Plat3],start = c(2022, 01), end = c(2022, 12), frequency = 12)
+Producao.P50
+ts.Prod22
+
+    if (Plat2==23) {
+    Resultado.graf2 = aggregate(Producao ~ rank+Date+iter, Resultado.graf, sum)
+    }
+
+    if (Plat2<23) {
+     Resultado.graf2 <- filter(Resultado.graf, UEP==Plat2) 
+     
+    }
+
+plot(Producao.P50, type = "l", main = paste0( "Simulação da Producao - ",Plat3), ylab = "IEP", ylim = range(0,Producao.P50+5000))+if (Plat2==23) 
+  { for (i in 1:Nsim) {
+lines(ts(filter(Resultado.graf2%>% arrange(Date), iter == paste0("V",i))$Producao  ,start = c(2022, 01), end = c(2022, 12), frequency = 12), col = "grey")+lines(Producao.P50,         col = "navyblue", type = "l",    lwd = 3)+lines(ts.Prod22,         col = "orange", type = "l",    lwd = 2)#+legend("bottomright",legend = c("P50", "Realizado", "Iterações"),col = c("navyblue", "orange", "grey"),lty = 2)
+  }}
+       if (Plat2<23) {
+         for (i in 1:Nsim) {
+  lines(ts(filter(Resultado.graf2%>% arrange(Date), Plataforma == datasetIEP.UEP[Plat2,1] & iter == paste0("V",i))$Producao  ,start = c(2022, 01), end = c(2022, 12), frequency = 12), col = "grey")+lines(Producao.P50,         col = "navyblue", type = "l",    lwd = 3)+lines(ts.Prod22,         col = "orange", type = "l",    lwd = 2)
+         }
+       }
+```           
+           
+
+
+
+```
+
+#Grafico Curvas:
+```{r ts erroS} 
+uep = 1
+
+
+Producao.P10<- ts(filter(Resultado.graf, Plataforma == UEPs[uep] & rank == rank10)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+Producao.P50<- ts(filter(Resultado.graf, Plataforma == UEPs[uep] & rank == rank50)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12)  
+Producao.P90<- ts(filter(Resultado.graf, Plataforma == UEPs[uep] & rank == rank90)$Producao, start = c(2022, 01), end = c(2022, 12), frequency = 12) 
+
+
+
+plot(Producao.P50, ylim = range(0,Producao.P50+10000))
+
+
+for (i in 1:Nsim) {
+  lines(ts(filter(Resultado.graf%>% arrange(Date), Plataforma == datasetPot.UEP[uep,1] & iter == paste0("V",i))$Producao  ,start = c(2022, 01), end = c(2022, 12), frequency = 12), col = "lavender") 
+  #%>% filter(Resultado.Boots$iter == paste0("V",i))
+
+}
+lines(Producao.P50,         col = "navyblue", type = "l",lwd = 3)
+#lines(Producao.P10,         col = "steelblue3")
+#lines(Producao.P90,         col = "steelblue3")
+```
+
+
+#Teste Expand.Grid:
+```{r ts erroS}
+Resultado.teste <- filter(Resultado.graf, Plataforma=="CDAN")
+Resultado.teste <- select(Resultado.teste, c("Date","Potencial","PotencialParada","IEP","Poconovo"))
+Resultado.teste2 <- expand.grid(Resultado.teste)
+``` 
+
+
+
+
+
+#Erros:
+```{r ts erroS}
+Erros = data.frame(modelo = c("tbats","arima","ets","rnar"),
+                  valor  = c( Pot.erroARIMA,
+                              Pot.erroETS,
+                              Pot.erroTBATs,
+                              Pot.erroELM)  )
+
+```    
+
+
+#TESTES VISUALIZACOES:
+
+```{r tabsets, echo=FALSE}
+
+d <- ggplot(pot.sem.pocos, aes(x=PotencialMV, y=UEP, fill=UEP)) + geom_violin(trim = FALSE) + geom_boxplot(width = 0.2) +
+  stat_summary(
+    fun.data = "mean_sdl",  fun.args = list(mult = 1), 
+    geom = "pointrange", color = "black"
+    ) + theme(legend.position = "none")
+
+#+  geom_violin(show.legend = FALSE, adjust=0.75, draw_quantiles = c(0.25, 0.5, 0.75)) + geom_dotplot(binaxis = "y", binwidth = 0.5, stackdir = "center", show.legend=FALSE)
+
+
+ggplotly(d)
+
+```
+
+#IEP
+```{r tabsets, echo=FALSE}
+
+e <- ggplot(datasetIEP.ajus, aes(x=IEP.ajuste, y=UEP, fill=UEP)) 
+
+e + geom_violin(trim = FALSE) + geom_boxplot(width = 0.2) +
+  stat_summary(
+    fun.data = "mean_sdl",  fun.args = list(mult = 1), 
+    geom = "pointrange", color = "black"
+    ) + theme(legend.position = "none")
+#+  geom_violin(show.legend = FALSE, adjust=0.75, draw_quantiles = c(0.25, 0.5, 0.75)) + geom_dotplot(binaxis = "y", binwidth = 0.5, stackdir = "center", show.legend=FALSE)
+
+
+#ggplotly(e)
+
+```
+
+
+
+f <- ggplot(Paradas.graf, aes(x = Plataforma, y = Duracao.Simulada)) +
+  geom_violin(aes(fill = "Duracao.Simulada"), alpha = 0.5) +
+  geom_violin(aes(x = Plataforma, y = Duracao.Planejada, fill = "Duracao.Planejada"), alpha = 1) +
+  geom_violin(aes(x = Plataforma, y = Duracao.Realizada, fill = "Duracao.Realizada"), alpha = 0.8) +
+  geom_blank(aes(x = Plataforma, y = Cluster.x, fill = "Cluster.x"))
+  #+ theme(legend.position = "none") 
+
+ggplotly(f)
+
+
+#Paradas - input
+```{r tabsets, echo=FALSE}
+
+
+datasetParadas.agg <- aggregate(cbind(VolumeParadas,Duracao)~ UEP+Cluster,datasetParadas,mean)
+
+datasetParadas.agg["PerdaMediaDiaria"] = datasetParadas.agg$VolumeParadas / datasetParadas.agg$Duracao
+
+ggplotly(ggplot(datasetParadas.agg,aes(x=UEP,y=PerdaMediaDiaria,fill=Cluster))+
+geom_bar(position = "dodge",stat = "identity")+ 
+geom_line(aes(x=UEP,y=Duracao, group = 1),inherit.aes = FALSE) +ggtitle("Dados Históricos - Perda e Duração por Plataforma") +scale_y_continuous(sec.axis = sec_axis(~.*100, name = "Perda"))+ylab("Perda"))
+#+ theme(legend.position = "none")
+#ggplot( ) +
+
+
+```
+
++ geom_point(Paradas.graf, aes(x=Duracao, y=Plataforma, fill=Plataforma)) 
++ geom_point(aes(size = qsec))
+
+
+options(repr.plot.width=14,repr.plot.height=9)
+ggplot(data = datasetPotencial, aes(x = Date, y = Potencial, group = 1)) +
+  geom_line() +
+  facet_wrap(facets = vars(UEP))
+  
+#Pocos Novos agregado
+```{r tabsets, echo=FALSE}
+library(gganimate)
+
+datasetPocosEntraram.agg <- aggregate(cbind(ValorPocos)~ Date,datasetPocosEntraram,sum)
+
+Graf.Pot <- ggplot(data = datasetPocosEntraram.agg, aes(x = Date, y = ValorPocos, group = 1)) + geom_line() + ggtitle("Histórico dos Poços Novos - Bacia Geográfica de Campos")+ylab("Potencial (BPD)")+
+    transition_reveal(Date)#+  facet_wrap(facets = vars(UEP))
+
+ggplotly(Graf.Pot)
+```
+
+
+
+
+
+```{r tabsets, echo=FALSE}
+Paradas.simulado <- Paradas.Agreg.Sim[,c(1,4:5)]
+Paradas.simulado["cenario"] <- "Simulado"
+Paradas_UEP["cenario"] <- "Planejado"
+Paradas_UEP["variable"] <- "P"
+Paradas.Planejado <- Paradas_UEP[,c(1,6,4,7)]
+
+colnames(Paradas.simulado) <- c("UEP","variable", "Dur", "cenario")
+
+Paradas.graf <- rbind(Paradas.simulado,Paradas.Planejado)
+```
+
+#Paradas Final2:
+```{r tabsets, echo=FALSE}
+
+GeomSplitViolin <- ggproto("GeomSplitViolin", GeomViolin, 
+                           draw_group = function(self, data, ..., draw_quantiles = NULL) {
+  data <- transform(data, xminv = x - violinwidth * (x - xmin), xmaxv = x + violinwidth * (xmax - x))
+  grp <- data[1, "group"]
+  newdata <- plyr::arrange(transform(data, x = if (grp %% 2 == 1) xminv else xmaxv), if (grp %% 2 == 1) y else -y)
+  newdata <- rbind(newdata[1, ], newdata, newdata[nrow(newdata), ], newdata[1, ])
+  newdata[c(1, nrow(newdata) - 1, nrow(newdata)), "x"] <- round(newdata[1, "x"])
+
+  if (length(draw_quantiles) > 0 & !scales::zero_range(range(data$y))) {
+    stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <=
+      1))
+    quantiles <- ggplot2:::create_quantile_segment_frame(data, draw_quantiles)
+    aesthetics <- data[rep(1, nrow(quantiles)), setdiff(names(data), c("x", "y")), drop = FALSE]
+    aesthetics$alpha <- rep(1, nrow(quantiles))
+    both <- cbind(quantiles, aesthetics)
+    quantile_grob <- GeomPath$draw_panel(both, ...)
+    ggplot2:::ggname("geom_split_violin", grid::grobTree(GeomPolygon$draw_panel(newdata, ...), quantile_grob))
+  }
+  else {
+    ggplot2:::ggname("geom_split_violin", GeomPolygon$draw_panel(newdata, ...))
+  }
+})
+
+geom_split_violin <- function(mapping = NULL, data = NULL, stat = "ydensity", position = "identity", ..., 
+                              draw_quantiles = NULL, trim = TRUE, scale = "area", na.rm = FALSE, 
+                              show.legend = NA, inherit.aes = TRUE) {
+  layer(data = data, mapping = mapping, stat = stat, geom = GeomSplitViolin, 
+        position = position, show.legend = show.legend, inherit.aes = inherit.aes, 
+        params = list(trim = trim, scale = scale, draw_quantiles = draw_quantiles, na.rm = na.rm, ...))
+}
+# convert to long format and percents
+ggplot(Paradas.graf, aes(x = UEP, y = Dur, fill = cenario)) + geom_split_violin(alpha = .8, trim = FALSE)
+ 
+
+``` 
+ 
+ 
+ +
+  geom_boxplot(width = .2, alpha = .6, fatten = NULL, show.legend = FALSE) +
+  stat_summary(fun.data = "mean_se", geom = "pointrange", show.legend = F, 
+               position = position_dodge(.175)) +
+  scale_x_discrete(name = "Condition", labels = c("Non-word", "Word")) +
+  scale_y_continuous(name = "Reaction time (ms)",
+                     breaks = seq(200, 800, 100), 
+                     limits = c(200, 800)) +
+  scale_fill_brewer(palette = "Dark2", name = "Language group") +
+  theme_minimal()
+
+
+#Paradas Final3:
+```{r tabsets, echo=FALSE}
+library(ggridges)
+# convert to long format and percents
+long <- pivot_longer(Paradas.graf, cols = c(14),
+                     names_to = "label",
+                     values_to = "prob") %>%
+  mutate(label = factor(label, names(Paradas.graf), names(Paradas.graf)),
+         prob = prob)
+
+ggplot(long, aes(x = prob, y = Plataforma, fill = label)) + ggridges::geom_density_ridges(scale = 1, show.legend = FALSE)+  scale_x_continuous(name = "Duracao Simulada") +
+  # control space at top and bottom of plot
+  scale_y_discrete(name = "", expand = c(0.02, 0, .08, 0)) + 
+  scale_fill_viridis_d(option = "E") # colourblind-safe colours
+  # control space at top and bottom of plot
+  #scale_y_discrete(name = "", expand = c(0.02, 0, .08, 0)) + 
+  #scale_fill_viridis_d(option = "D") # colourblind-safe colours
+``` 
+  
+e + geom_violin(trim = FALSE) + geom_boxplot(width = 0.2) +
+  stat_summary(
+    fun.data = "mean_sdl",  fun.args = list(mult = 1), 
+    geom = "pointrange", color = "black"
+    ) + theme(legend.position = "none")
+    
+    geom_line(aes(x = seq(1:12), y = poc.media), col = "red")+
+    geom_line(aes(x = seq(1:12), y = pot.media), col = "blue", linetype = "dashed") +
+    geom_line(aes(x = seq(1:12), y = prod.media), col = "green")
+
+
+
+
+```{r timetk2, dev='png'}
+tibble_pot %>% group_by(UEP) %>% plot_anomaly_diagnostics(Date, Potencial, .facet_ncol = 3, .interactive = FALSE) 
+```
+
+#########Excluir:
+```{r Simulador teste2}   
+    Resultado.ajus = agregar(Metodo.PotPocoParada, Metodo.IEP2)
+         
+ Producao.Iter = aggregate(Producao ~ iter, Resultado.ajus, sum)
+  Producao.Iter = Producao.Iter %>% mutate(rank = rank(Producao)) %>% select(-Producao) #%>% group_by(UEP) 
+  
+  Resultado.graf = inner_join(Producao.Iter,Resultado.ajus, by = c("iter" = "iter"))
+  
+  dataset.Merge =  MergeCen(Resultado.graf)
+```
+
+
+
+```{r Mean}
+
+Plat2 = Plat.Sel.Result("PETROBRAS XX") #input$SELplat2
+Plat2
+
+dataset.Merge2 <- filter(dataset.Merge, variable==Plat2) #input$SELplat2
+
+
+mu <- ddply(dataset.Merge2, "Cen", summarise, grp.mean=mean(value))
+head(mu)
+```
+
+
+```{r Density}
+tic()
+time <- toc()
+
+Tempo = time$toc - time$tic 
+Tempo = round(Tempo,2) %>% as.numeric() 
+print(Tempo)
+```
+
+    p.merge <- ggplot(dataset.Merge2, aes(x=value, group=Cen, fill=Cen)) +
+    geom_density(adjust=1.5, alpha=.4) +
+    theme_ipsum() +
+    facet_wrap(~variable) +
+    theme(
+      legend.position="bottom",
+      panel.spacing = unit(0.1, "lines"),
+      axis.ticks.x=element_blank()
+    )
+
+p.merge+geom_vline(data=mu, aes(xintercept=grp.mean, color=Cen),linetype="dashed")
+
+
+
+
+Note the use of the `height` parameter to determine how much vertical space the embedded application should occupy.
+
+You can also use the `shinyApp` function to define an application inline rather then in an external directory.
+
+In all of R code chunks above the `echo = FALSE` attribute is used. This is to prevent the R code within the chunk from rendering in the document alongside the Shiny components.
+
+
+#dataset.Merge =  MergeCen(Resultado.graf) 
